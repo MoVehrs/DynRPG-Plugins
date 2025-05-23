@@ -1,0 +1,42 @@
+#define PLUGIN_NAME "DynamicQuickPatch"
+#define PLUGIN_INTERNAL_NAME "dynamic_quickpatch.dll"
+#define PLUGIN_VERSION      1,0,0,0
+#define PLUGIN_VERSION_TXT "1.0.0.0"
+#define PLUGIN_COPYRIGHT "(C) 2025 Hammy"
+#define PLUGIN_COMMENTS "Dynamic memory modification system for RPG Maker 2003"
+
+#include <winver.h>
+
+VS_VERSION_INFO     VERSIONINFO
+FILEVERSION         PLUGIN_VERSION
+PRODUCTVERSION      PLUGIN_VERSION
+FILEFLAGSMASK       VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+FILEFLAGS           1
+#else
+FILEFLAGS           0
+#endif
+FILEOS              VOS__WINDOWS32
+FILETYPE            VFT_DLL
+FILESUBTYPE         0   // not used
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    //language ID = U.S. English, char set = Windows, Multilingual
+    BEGIN
+      VALUE "FileDescription",  PLUGIN_INTERNAL_NAME
+      VALUE "FileVersion",      PLUGIN_VERSION_TXT
+      VALUE "InternalName",     PLUGIN_INTERNAL_NAME
+      VALUE "LegalCopyright",   PLUGIN_COPYRIGHT
+      VALUE "OriginalFilename", PLUGIN_INTERNAL_NAME
+      VALUE "ProductName",      PLUGIN_NAME
+      VALUE "ProductVersion",   PLUGIN_VERSION_TXT
+      VALUE "Comments",         PLUGIN_COMMENTS
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1252
+  END
+END 

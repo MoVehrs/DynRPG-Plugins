@@ -229,5 +229,4 @@ If you encounter issues:
 Special thanks to:
 
 - Cherry (David Trapp) for [DynRPG](https://rpg-maker.cherrytree.at/dynrpg/).
-
 - rewrking aka PepsiOtaku for [DynRPG](https://github.com/rewrking/DynRPG). 

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="limit_break" />
+		<Option pch_mode="2" />
+		<Option compiler="tdm-32" />
+		<Build>
+			<Target title="Release">
+				<Option output="../limit_break" prefix_auto="1" extension_auto="1" />
+				<Option object_output="../" />
+				<Option type="3" />
+				<Option compiler="tdm-32" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++11" />
+			<Add option="-Os -ffunction-sections -fdata-sections -fno-rtti -fomit-frame-pointer -flto -ffast-math -fmerge-all-constants" />
+			<Add option="-D_GLIBCXX_USE_CXX11_ABI=0" />
+			<Add directory="../../../../../../DynRPG/0.32/sdk/include" />
+		</Compiler>
+		<Linker>
+			<Add option="-Wl,--gc-sections -Wl,--strip-all -Wl,--as-needed -s -flto" />
+			<Add library="../../../../../../DynRPG/0.32/sdk/lib/libDynRPG.a" />
+			<Add directory="../../../../../../DynRPG/0.32/sdk/lib" />
+		</Linker>
+		<Unit filename="README.md" />
+		<Unit filename="dialog.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="limit_break.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="limit_break.rc">
+			<Option compilerVar="WINDRES" />
+		</Unit>
+		<Unit filename="limit_break_calculate.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="limit_break_config.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="limit_break_graphics.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="main.cpp">
+			<Option compilerVar="CPP" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

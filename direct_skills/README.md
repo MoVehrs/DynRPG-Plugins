@@ -77,6 +77,7 @@ BattleCommandId15_DefaultId=150   ; Default skill ID to use if variable 45 conta
 The plugin requires one or more battle command to skill mappings to function. Each mapping follows this format:
 
 ```ini
+[direct_skills]
 BattleCommandIdX=Y
 ```
 
@@ -86,6 +87,7 @@ Where:
 
 For example:
 ```ini
+[direct_skills]
 BattleCommandId14=123
 ```
 
@@ -96,6 +98,7 @@ This means that when battle command 14 is used, skill 123 will be executed inste
 For dynamic skill execution, you can use variable-based skill IDs. The format is:
 
 ```ini
+[direct_skills]
 BattleCommandIdX=vY
 BattleCommandIdX_DefaultId=Z  ; REQUIRED for variable-based mappings
 ```
@@ -107,6 +110,7 @@ Where:
 
 For example:
 ```ini
+[direct_skills]
 BattleCommandId15=v45
 BattleCommandId15_DefaultId=150  ; REQUIRED for variable-based mappings
 ```

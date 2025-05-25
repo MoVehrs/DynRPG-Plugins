@@ -36,7 +36,7 @@ This plugin takes the concept further by:
 
 ## Installation
 
-1. Place the `DynamicQuickPatch.dll` file in your game's DynPlugins folder.
+1. Place the `dynamic_quickpatch.dll` file in your game's DynPlugins folder.
 2. Configure the plugin in your `DynRPG.ini` file (see below).
 
 ## Configuration

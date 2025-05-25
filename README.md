@@ -30,6 +30,32 @@ This repository is meant to:
 3. Make sure your game is DynRPG-patched (game root should include `DynRPG.ini` and `dynloader.dll`).
 4. Adjust the `DynRPG.ini` file to load the desired plugins. 
 
+## 🧪 Building From Source
+
+If you’d like to build the plugins yourself instead of using the precompiled `.dll` files, here's how to set up your environment correctly.
+
+> ⚠️ DynRPG operates at a **very low level**, meaning that using the wrong compiler can cause crashes or undefined behavior. It's important to follow the guidelines carefully.
+
+### 🧰 Required Tools
+
+- **C++ Compiler:** DynRPG is built with **GCC**, and only works with **GCC version 4.7.1 or higher**.  
+  While Cherry originally recommends GCC directly, I'm using **[TDM-GCC 32-bit](https://jmeubank.github.io/tdm-gcc/download/)** as a compatible alternative.
+
+- **IDE (Optional):** I recommend using **[Code::Blocks](https://www.codeblocks.org/)**, a lightweight and easy-to-use C++ IDE that integrates well with TDM-GCC.
+
+### 🧵 Steps to Compile
+
+1. Install **[TDM-GCC 32-bit](https://jmeubank.github.io/tdm-gcc/download/)**.
+2. Install **[Code::Blocks](https://www.codeblocks.org/)** and configure it to use TDM-GCC as the default compiler.
+3. Clone this repository and open the `.cbp` project file in Code::Blocks, or create a new project using the source files.
+4. Build the project. The resulting `.dll` file will be your DynRPG plugin.
+
+### 📚 More Information
+
+For a complete setup guide and tips on using the DynRPG SDK, visit the official documentation by Cherry:
+
+👉 **[Getting Started with DynRPG](https://rpg-maker.cherrytree.at/dynrpg/getting_started.html)**
+
 ## 🔗 Other DynRPG Plugin Repositories
 
 Explore more DynRPG plugins created by other developers in the community:

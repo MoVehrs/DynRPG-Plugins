@@ -21,7 +21,7 @@ This repository is meant to:
 
 ## 🛠 Requirements
 
-- **RPG Maker 2003 (v1.08 or later)**
+- **RPG Maker 2003 v1.08**
 - **DynRPG 0.32** installed on your game project **[Link](https://github.com/rewrking/DynRPG)**
 - A basic understanding of how to install and use DynRPG plugins
 

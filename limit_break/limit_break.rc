@@ -3,7 +3,7 @@
 #define PLUGIN_VERSION      1,0,0,0
 #define PLUGIN_VERSION_TXT "1.0.0.0"
 #define PLUGIN_COPYRIGHT "(C) 2025 Hammy"
-#define PLUGIN_COMMENTS "Limit Break system for RPG Maker 2000/2003"
+#define PLUGIN_COMMENTS "Limit Break system for RPG Maker 2003"
 
 #include <winver.h>
 

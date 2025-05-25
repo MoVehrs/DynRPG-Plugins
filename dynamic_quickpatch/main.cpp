@@ -1,5 +1,5 @@
 /*
- * Entry point for the DynamicQuickPatch plugin for RPG Maker 2000/2003.
+ * Entry point for the DynamicQuickPatch plugin for RPG Maker 2003.
  * This plugin maps RPG Maker 2003 variables to memory addresses,
  * allowing dynamic modification of quickpatches during gameplay.
  * 

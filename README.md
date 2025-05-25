@@ -56,7 +56,7 @@ For a complete setup guide and tips on using the DynRPG SDK, visit the official 
 
 👉 **[Getting Started with DynRPG](https://rpg-maker.cherrytree.at/dynrpg/getting_started.html)**
 
-## 🔗 Other DynRPG Plugin Repositories
+## 🧩 Other DynRPG Plugin Repositories
 
 Explore more DynRPG plugins created by other developers in the community:
 

@@ -227,7 +227,7 @@ Equip56=-1.0
   - true = Play sound effect.
   - false = No sound effect (default).
 - `Sound100PercentFile`: Name of the sound effect file to play (**OPTIONAL**).
-  - Use the name of a valid RPG Maker 2000/2003 sound effect without file extension.
+  - Use the name of a valid RPG Maker 2003 sound effect without file extension.
   - Examples: "jingle1", "flash2", "cat".
   - If specified, this will automatically set `PlaySound100Percent` to true.
   - If not specified but `PlaySound100Percent` is true, "flash1" will be used as default.

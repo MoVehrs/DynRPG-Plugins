@@ -1,5 +1,5 @@
 /*
- * Entry point for the Limit Break plugin for RPG Maker 2000/2003.
+ * Entry point for the Limit Break plugin for RPG Maker 2003.
  * This file contains DynRPG callback functions that serve as entry
  * points from the game engine into our plugin's functionality.
  * 

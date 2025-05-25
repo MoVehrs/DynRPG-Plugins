@@ -550,7 +550,7 @@ bool LoadConfig(char *pluginName) {
     actorConfig.clear();
     
     // Iterate through possible actor IDs (1 to maxActorId)
-    // RPG Maker 2000/2003 actor IDs start at 1, not 0
+    // RPG Maker 2003 actor IDs start at 1, not 0
     for (int i = 1; i <= maxActorId; ++i) { // Support up to maxActorId actors
         // Create the prefix used for all keys related to this actor (e.g., "Actor1LimitVarID")
         std::string actorPrefix = "Actor" + std::to_string(i);

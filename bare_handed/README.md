@@ -230,13 +230,6 @@ Actor4_VariableId=10   ; Weapon ID from variable 10
 Actor5_VariableId=11   ; Weapon ID from variable 11
 ```
 
-## Usage
-
-1. Configure your actor-to-weapon mappings in `DynRPG.ini` as shown above.
-2. Create the corresponding weapons in your RPG Maker 2003 database.
-3. The plugin will automatically manage equipping and unequipping of unarmed weapons during gameplay.
-4. Use the event comment commands (see below) for additional control over bare hand weapons in events.
-
 ## Event Comment Commands
 
 This plugin provides two special event commands that can be used in comment event commands:
@@ -302,6 +295,13 @@ You MUST place a comment command before the Change Equipment event command:
 
 **Why this is necessary:**
 Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events.
+
+## Usage
+
+1. Configure your actor-to-weapon mappings in `DynRPG.ini` as shown above.
+2. Create the corresponding weapons in your RPG Maker 2003 database.
+3. The plugin will automatically manage equipping and unequipping of unarmed weapons during gameplay.
+4. Use the event comment commands (see below) for additional control over bare hand weapons in events.
 
 ## Troubleshooting
 

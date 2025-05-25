@@ -75,6 +75,7 @@ Actor4_VariableId=10  ; Variable 10 contains the weapon ID to equip for Actor 4
 The plugin requires one or more actor-to-weapon mappings to function. Each mapping follows this format:
 
 ```ini
+[bare_handed]
 ActorX_UnarmedWeaponId=Y
 ```
 
@@ -84,6 +85,7 @@ Where:
 
 For example:
 ```ini
+[bare_handed]
 Actor1_UnarmedWeaponId=87
 ```
 
@@ -99,6 +101,7 @@ This means that when actor 1 has no weapon equipped, the plugin will automatical
 For dynamic weapon configuration, you can use variable-based weapon IDs. The format is:
 
 ```ini
+[bare_handed]
 ActorX_VariableId=Y
 ```
 
@@ -108,6 +111,7 @@ Where:
 
 For example:
 ```ini
+[bare_handed]
 Actor1_VariableId=10
 ```
 

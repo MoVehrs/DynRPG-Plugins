@@ -475,15 +475,15 @@ The ultimate limit bar can use up to three image files placed in the `DynRessour
 
 **Important Image Requirements:**
 
-- All images must use RPG Maker's default mask color (magenta #FF00FF) for transparency
+- All images must use RPG Maker's default mask color (magenta #FF00FF) for transparency.
 
-- Image dimensions must be evenly divisible by the frame count when using animation
+- Image dimensions must be evenly divisible by the frame count when using animation.
 
-- For horizontal bars with animation: Total height must be (frame height × frame count)
+- For horizontal bars with animation: Total height must be (frame height × frame count).
 
-- For vertical bars with animation: Total width must be (frame width × frame count)
+- For vertical bars with animation: Total width must be (frame width × frame count).
 
-- Images with invalid dimensions will fail to load or display incorrectly
+- Images with invalid dimensions will fail to load or display incorrectly.
 
 
 
@@ -491,13 +491,13 @@ The ultimate limit bar can use up to three image files placed in the `DynRessour
 
 - For horizontal bar layout:
 
-  - Image must be exactly 1 pixel wide
+  - Image must be exactly 1 pixel wide.
 
-  - Height per frame can be any size you want
+  - Height per frame can be any size you want.
 
-  - First pixel of each frame must be magenta (#FF00FF)
+  - First pixel of each frame must be magenta (#FF00FF).
 
-  - Example: For 10 frames with 8px frame height, image would be 1×80 pixels
+  - Example: For 10 frames with 8px frame height, image would be 1×80 pixels.
 
   - The magenta pixels should be at positions (0,0), (0,8), (0,16), etc.
 
@@ -505,13 +505,13 @@ The ultimate limit bar can use up to three image files placed in the `DynRessour
 
 - For vertical bar layout:
 
-  - Image must be exactly 1 pixel high
+  - Image must be exactly 1 pixel high.
 
-  - Width per frame can be any size you want
+  - Width per frame can be any size you want.
 
-  - First pixel of each frame must be magenta (#FF00FF)
+  - First pixel of each frame must be magenta (#FF00FF).
 
-  - Example: For 10 frames with 8px frame width, image would be 80×1 pixels
+  - Example: For 10 frames with 8px frame width, image would be 80×1 pixels.
 
   - The magenta pixels should be at positions (0,0), (8,0), (16,0), etc.
 
@@ -543,13 +543,13 @@ While background.png and foreground.png are optional, bar.png is strictly requir
 
    **Important Command Setup Requirements:**
 
-   - The command must be a basic "Attack" type command, not a skill menu or subtype
+   - The command must be a basic "Attack" type command, not a skill menu or subtype.
 
-   - The command name can be anything (e.g., "Limit", "Special", "Break")
+   - The command name can be anything (e.g., "Limit", "Special", "Break").
 
-   - When creating the Ultimate Limit command, use the same settings
+   - When creating the Ultimate Limit command, use the same settings.
 
-   - Other command types (skill menus, item, etc.) should use different IDs
+   - Other command types (skill menus, item, etc.) should use different IDs.
 
 
 
@@ -571,11 +571,11 @@ While background.png and foreground.png are optional, bar.png is strictly requir
 
    This is required because:
 
-   - The plugin only checks the first command slot for Limit/Ultimate commands
+   - The plugin only checks the first command slot for Limit/Ultimate commands.
 
-   - The plugin only converts Attack/Double Attack commands into limit skills
+   - The plugin only converts Attack/Double Attack commands into limit skills.
 
-   - Commands in other positions or of other types will not trigger limit skills
+   - Commands in other positions or of other types will not trigger limit skills.
 
 
 
@@ -585,23 +585,23 @@ While background.png and foreground.png are optional, bar.png is strictly requir
 
 4. For every Monster Group in your game, set up four event pages:
 
-   - **Page 1:** Condition → Turns Elapsed 0 + 0 (pre-battle only)
+   - **Page 1:** Condition → Turns Elapsed 0 + 0 (pre-battle only).
 
-   - **Page 2:** Condition → Turns Elapsed 1 + 1 (every turn after the first)
+   - **Page 2:** Condition → Turns Elapsed 1 + 1 (every turn after the first).
 
-   - **Page 3:** Condition → Ultimate Variable > -1 (tracks normal limit command changes)
+   - **Page 3:** Condition → Ultimate Variable > -1 (tracks normal limit command changes).
 
-   - **Page 4:** Condition → Ultimate Variable > 99 (tracks ultimate limit command changes)
+   - **Page 4:** Condition → Ultimate Variable > 99 (tracks ultimate limit command changes).
 
    
 
    In all four pages, call the common event you created above. This ensures proper command switching:
 
-   - Pages 1 and 2 handle regular turn-based command updates
+   - Pages 1 and 2 handle regular turn-based command updates.
 
-   - Page 3 ensures commands update when limit values change
+   - Page 3 ensures commands update when limit values change.
 
-   - Page 4 ensures commands update when ultimate limit becomes available
+   - Page 4 ensures commands update when ultimate limit becomes available.
 
 
 

@@ -67,7 +67,7 @@ Explore more DynRPG plugins created by other developers in the community:
 - **[DynRPG-plugin-archive by rewrking](https://github.com/rewrking/DynRPG-plugin-archive)**  
   Archive of older DynRPG plugins and C++ projects from 2012 to 2015.
 
-- **[system_opengl](https://github.com/rewrking/DynRPG-system-opengl)**  
+- **[system_opengl by rewrking](https://github.com/rewrking/DynRPG-system-opengl)**  
   A DynRPG plugin to enable OpenGL rendering in older RPG Maker 2003 games.
   
 - **[DynRPG_Pathfeeder by DNKpp](https://github.com/DNKpp/DynRPG_Pathfeeder)**  

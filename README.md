@@ -78,6 +78,9 @@ Explore more DynRPG plugins created by other developers in the community:
   
 - **[DynRPG_Pathfeeder by DNKpp](https://github.com/DNKpp/DynRPG_Pathfeeder)**
   Pathfinding plugin for DynRPG 0.32. Provides path data, movement handled by the developer.
+
+- **[animated-monsters by adketuri](https://github.com/adketuri/animated-monsters)**
+  A DynRPG plugin to animate your monsters with the DBS.
   
 - **[RPGSS by kyuu](https://github.com/kyuu/dynrpg-rpgss)**
   Lua-based scripting system for RPG Maker 2003. Similar to RGSS for XP.

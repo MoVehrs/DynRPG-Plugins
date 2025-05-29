@@ -61,17 +61,24 @@ For a complete setup guide and tips on using the DynRPG SDK, visit the official 
 
 Explore more DynRPG plugins created by other developers in the community:
 
-- **[CortiPluginCollection by CortiWins](https://github.com/CortiWins/CortiPluginCollection/tree/main)**  
+- **[CortiPluginCollection by CortiWins](https://github.com/CortiWins/CortiPluginCollection/tree/main)**
   Collection of DynRPG plugins. Some maintained, some legacy. Documentation in English and German.
   
-- **[DynRPG-plugin-archive by rewrking](https://github.com/rewrking/DynRPG-plugin-archive)**  
+- **[DynRPG-plugin-archive by rewrking](https://github.com/rewrking/DynRPG-plugin-archive)**
   Archive of older DynRPG plugins and C++ projects from 2012 to 2015.
 
-- **[system_opengl by rewrking](https://github.com/rewrking/DynRPG-system-opengl)**  
+- **[system_opengl by rewrking](https://github.com/rewrking/DynRPG-system-opengl)**
   A DynRPG plugin to enable OpenGL rendering in older RPG Maker 2003 games.
+
+- **[DynDataAccess by AubreyTheBard](https://github.com/AubreyTheBard/DynDataAccess)**
+  A DynRPG plugin to allow access (get and set) to RPG Maker 2003 data which is normally hidden from the developer.
+
+- **[DynGauge by AubreyTheBard](https://github.com/AubreyTheBard/DynGauge)**
+  A DynRPG plugin to display health, mana, and ATB gauges, plus status condition icons and counters, for Battlers.
   
-- **[DynRPG_Pathfeeder by DNKpp](https://github.com/DNKpp/DynRPG_Pathfeeder)**  
+- **[DynRPG_Pathfeeder by DNKpp](https://github.com/DNKpp/DynRPG_Pathfeeder)**
   Pathfinding plugin for DynRPG 0.32. Provides path data, movement handled by the developer.
   
-- **[RPGSS by kyuu](https://github.com/kyuu/dynrpg-rpgss)**  
+- **[RPGSS by kyuu](https://github.com/kyuu/dynrpg-rpgss)**
   Lua-based scripting system for RPG Maker 2003. Similar to RGSS for XP.
+  

@@ -14,10 +14,10 @@ This repository is meant to:
 
 > ⚠️ Work in progress! This list will grow over time as I add more.
 
-- **[bare_handed](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/bare_handed)**
-- **[direct_skills](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/direct_skills)**
-- **[dynamic_quickpatch](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/dynamic_quickpatch)**
-- **[limit_break](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/limit_break)**
+- **[bare_handed](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/bare_handed)** 1.0.1.0
+- **[direct_skills](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/direct_skills)** 1.0.1.0
+- **[dynamic_quickpatch](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/dynamic_quickpatch)** 1.0.1.0
+- **[limit_break](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/limit_break)** 1.0.0.0
 
 ## 🛠 Requirements
 

@@ -1,48 +1,81 @@
-/*
- * Configuration handling for the DynamicQuickPatch plugin.
- * Loads and manages all settings from DynRPG.ini.
+/**
+ * @file dynamic_quickpatch_config.cpp
+ * @brief Configuration handling for the DynamicQuickPatch plugin.
+ * @details Loads and manages settings from DynRPG.ini, including variable mappings
+ *          and memory patch definitions.
  */
 
+/**
+ * @namespace DynamicQuickPatchConfig
+ * @brief Contains configuration settings and loading functionality.
+ * @details Manages the loading and validation of plugin settings from DynRPG.ini,
+ *          including variable-to-memory mappings and patch configurations.
+ */
 namespace DynamicQuickPatchConfig
 {
-    // Enum for quickpatch value types
+    /**
+     * @brief Enumeration of supported quickpatch value types.
+     * @details Defines the different types of memory values that can be written:
+     *          - 8-bit signed integers (% notation)
+     *          - 32-bit signed integers (# notation)
+     *          - Raw hex values
+     */
     enum QuickPatchType {
-        QPTYPE_8BIT,    // 8-bit signed integer (% notation)
-        QPTYPE_32BIT,   // 32-bit signed integer (# notation)
-        QPTYPE_HEX_RAW  // Raw hex values
+        QPTYPE_8BIT,    ///< 8-bit signed integer (% notation)
+        QPTYPE_32BIT,   ///< 32-bit signed integer (# notation)
+        QPTYPE_HEX_RAW  ///< Raw hex values
     };
-
-    // Structure to define a variable-to-quickpatch mapping
-    struct QuickPatchMapping {
-        int variableId;           // RPG Maker variable ID to monitor
-        unsigned int address;     // Memory address to patch
-        QuickPatchType type;      // Type of quickpatch value
-        std::string hexValue;     // For HEX_RAW type: hex string without spaces (e.g. "1A2B3C")
-        bool applyOnLoadGame;     // Whether to apply this patch when loading a save game
-    };
-
-    // ====== CONFIGURATION VARIABLES ======
-    // Enable or disable debug message boxes
-    static bool showDebugMessages = false;
-    
-    // Maximum variable ID (default: 1000, can be configured in DynRPG.ini)
-    static int maxVariableId = 1000;
-    
-    // Store the quickpatch mappings
-    static std::vector<QuickPatchMapping> quickpatchMappings;
-    // ====== END CONFIGURATION VARIABLES ======
 
     /**
-     * @brief Converts a string to an integer with error handling
-     * 
-     * @param str The string to convert
-     * @param defaultValue The value to return if conversion fails
-     * @return int The parsed integer or defaultValue if parsing fails
+     * @brief Structure defining a variable-to-quickpatch mapping.
+     * @details Maps an RPG Maker variable to a memory address and defines how
+     *          the variable's value should be interpreted when writing to memory.
+     */
+    struct QuickPatchMapping {
+        int variableId;           ///< RPG Maker variable ID to monitor
+        unsigned int address;     ///< Memory address to patch
+        QuickPatchType type;      ///< Type of quickpatch value
+        std::string hexValue;     ///< For HEX_RAW type: hex string without spaces (e.g. "1A2B3C")
+        bool applyOnLoadGame;     ///< Whether to apply this patch when loading a save game
+    };
+
+    /** @brief Maximum variable ID (default: 1000, configurable in DynRPG.ini) */
+    static int maxVariableId = 1000;
+    
+    /** @brief Vector storing all quickpatch mappings */
+    static std::vector<QuickPatchMapping> quickpatchMappings;
+
+    /**
+     * @brief Gets the list of quickpatch mappings.
+     * @return Reference to the vector of QuickPatchMapping objects.
+     * @details Provides read-only access to the loaded quickpatch mappings.
+     */
+    const std::vector<QuickPatchMapping>& getMappings() {
+        return quickpatchMappings;
+    }
+
+    /**
+     * @brief Gets the maximum variable ID.
+     * @return The configured maximum variable ID.
+     * @details Returns the maximum variable ID that was set in the configuration,
+     *          defaulting to 1000 if not specified.
+     */
+    int getMaxVariableId() {
+        return maxVariableId;
+    }
+
+    /**
+     * @brief Converts a string to an integer with error handling.
+     * @param str The string to convert.
+     * @param defaultValue Value to return if conversion fails.
+     * @return The parsed integer or defaultValue if parsing fails.
+     * @details Handles both decimal and hexadecimal format strings, with
+     *          proper error handling for invalid input.
      */
     int stringToInt(const std::string& str, int defaultValue = 0) {
         try {
+            // Handle hexadecimal format strings (0x prefix)
             if (str.substr(0, 2) == "0x") {
-                // Handle hex format
                 return std::stoi(str, nullptr, 16);
             }
             return std::stoi(str);
@@ -52,82 +85,75 @@ namespace DynamicQuickPatchConfig
     }
 
     /**
-     * @brief Converts a string to a boolean with error handling
-     * 
-     * @param str The string to convert
-     * @param defaultValue Value to return if conversion fails
-     * @return bool The parsed boolean
-     */
-    bool stringToBool(const std::string& str, bool defaultValue = false) {
-        if (str == "true" || str == "1" || str == "yes" || str == "y" || str == "on") {
-            return true;
-        } else if (str == "false" || str == "0" || str == "no" || str == "n" || str == "off") {
-            return false;
-        }
-        return defaultValue;
-    }
-
-    /**
-     * @brief Validates a hexadecimal string
-     * 
-     * @param hexStr The string to validate
-     * @return bool True if the string contains only valid hex characters
+     * @brief Validates a hexadecimal string.
+     * @param hexStr The string to validate.
+     * @return True if the string contains only valid hex characters.
+     * @details Verifies that:
+     *          1. All characters are valid hexadecimal digits
+     *          2. String length is even (complete byte pairs)
      */
     bool isValidHexString(const std::string& hexStr) {
+        // Validate each character is a valid hex digit
         for (char c : hexStr) {
             if (!isxdigit(c)) {
                 return false;
             }
         }
-        return hexStr.length() % 2 == 0; // Must be even length
+        // Ensure string length represents complete byte pairs
+        return hexStr.length() % 2 == 0;
     }
 
     /**
-     * @brief Loads plugin configuration from DynRPG.ini
-     * 
-     * @param pluginName Name of the plugin section in the INI file
-     * @return bool True if configuration was loaded successfully
+     * @brief Loads plugin configuration from DynRPG.ini.
+     * @param pluginName Name of the plugin section in the INI file.
+     * @return True if configuration was loaded successfully.
+     * @details Reads and validates all configuration settings from DynRPG.ini:
+     *          - Debug console settings
+     *          - Maximum variable ID
+     *          - QuickPatch mappings (up to 100 entries)
+     * @note Invalid entries are skipped with appropriate debug output.
      */
     bool loadConfig(char* pluginName) {
-        // Clear any existing configuration
+        // Reset configuration state before loading
         quickpatchMappings.clear();
         
-        // Load configuration dictionary from DynRPG.ini using the plugin name as section
+        // Load configuration from DynRPG.ini
         std::map<std::string, std::string> config = RPG::loadConfiguration(pluginName);
         
-        // Load debug settings
-        if (config.find("ShowDebugMessages") != config.end()) {
-            std::string debugStr = config["ShowDebugMessages"];
-            showDebugMessages = stringToBool(debugStr, false);
-        } else {
-            showDebugMessages = false;
+        // Initialize debug console with default disabled state
+        Debug::enableConsole = false;
+        if (config.find("EnableConsole") != config.end()) {
+            Debug::enableConsole = config["EnableConsole"] == "true";
         }
         
-        // Show initial debug message if enabled
-        if (showDebugMessages) {
-            Dialog::ShowInfo("Loading DynamicQuickPatch configuration...", "DynamicQuickPatch");
+        // Initialize debug console if enabled
+        if (Debug::enableConsole) {
+            Debug::initConsole();
+            
+            std::cout << "[DynamicQuickPatch - Configuration]" << std::endl;
+            std::cout << "Loading DynamicQuickPatch configuration..." << std::endl;
+            std::cout << std::endl;
         }
         
-        // Load maximum variable ID setting
+        // Load maximum variable ID with fallback to default
         if (config.find("MaxVariableId") != config.end()) {
             std::string maxVarStr = config["MaxVariableId"];
             maxVariableId = stringToInt(maxVarStr, 1000);
             if (maxVariableId <= 0) {
-                maxVariableId = 1000; // Fallback to default
+                maxVariableId = 1000;
             }
         } else {
-            maxVariableId = 1000; // Default value
+            maxVariableId = 1000;
         }
         
         int quickpatchCount = 0;
         bool hasErrors = false;
-        std::string errorMessages;
         
-        // Process QuickPatch entries from 1 to 100 (arbitrary limit)
+        // Process up to 100 QuickPatch entries
         for (int i = 1; i <= 100; i++) {
             std::string prefix = "QuickPatch" + std::to_string(i) + "_";
             
-            // Check if this QuickPatch entry exists in the config
+            // Check for existence of any settings with this prefix
             bool entryExists = false;
             for (const auto& pair : config) {
                 if (pair.first.find(prefix) == 0) {
@@ -136,204 +162,154 @@ namespace DynamicQuickPatchConfig
                 }
             }
             
-            // Skip this entry if it doesn't exist in the config
+            // Skip if no settings found for this index
             if (!entryExists) {
                 continue;
             }
         
-            // Now process this QuickPatch entry
+            // Extract configuration values with appropriate defaults
+            std::string varIdStr = config.find(prefix + "VariableId") != config.end() 
+                ? config[prefix + "VariableId"] : "0";
             
-            std::string varIdStr, addressStr, typeStr, hexValueStr, onLoadGameStr;
+            std::string addressStr = config.find(prefix + "Address") != config.end() 
+                ? config[prefix + "Address"] : "0";
             
-            // Get configuration values with appropriate defaults
-            if (config.find(prefix + "VariableId") != config.end()) {
-                varIdStr = config[prefix + "VariableId"];
-            } else {
-                varIdStr = "0";
+            std::string typeStr = config.find(prefix + "Type") != config.end() 
+                ? config[prefix + "Type"] : "";
+            
+            std::string hexValueStr = config.find(prefix + "HexValue") != config.end() 
+                ? config[prefix + "HexValue"] : "";
+            
+            std::string onLoadGameStr = config.find(prefix + "OnLoadGame") != config.end() 
+                ? config[prefix + "OnLoadGame"] : "true";
+            
+            // Log configuration details in debug mode
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Configuration]" << std::endl;
+                std::cout << "QuickPatch" << i << " Configuration:" << std::endl;
+                std::cout << "VariableId: " << varIdStr << std::endl;
+                std::cout << "Address: " << addressStr << std::endl;
+                std::cout << "Type: " << typeStr << std::endl;
+                std::cout << "HexValue: " << hexValueStr << std::endl;
+                std::cout << "OnLoadGame: " << onLoadGameStr << std::endl;
+                std::cout << std::endl;
             }
             
-            if (config.find(prefix + "Address") != config.end()) {
-                addressStr = config[prefix + "Address"];
-            } else {
-                addressStr = "0";
-            }
-            
-            if (config.find(prefix + "Type") != config.end()) {
-                typeStr = config[prefix + "Type"];
-            } else {
-                typeStr = "";
-            }
-            
-            if (config.find(prefix + "HexValue") != config.end()) {
-                hexValueStr = config[prefix + "HexValue"];
-            } else {
-                hexValueStr = "";
-            }
-            
-            if (config.find(prefix + "OnLoadGame") != config.end()) {
-                onLoadGameStr = config[prefix + "OnLoadGame"];
-            } else {
-                onLoadGameStr = "true";
-            }
-            
-            // Show debug info for this QuickPatch entry if debug is enabled
-            if (showDebugMessages) {
-                std::stringstream ss;
-                ss << "QuickPatch" << i << " Configuration:\n"
-                   << "VariableId: " << varIdStr << "\n"
-                   << "Address: " << addressStr << "\n"
-                   << "Type: " << typeStr << "\n"
-                   << "HexValue: " << hexValueStr << "\n"
-                   << "OnLoadGame: " << onLoadGameStr;
-                Dialog::ShowInfo(ss.str(), "DynamicQuickPatch");
-            }
-            
-            // Skip entries with missing required fields
+            // Skip entries missing required fields
             if (varIdStr == "0" || addressStr == "0" || typeStr.empty()) {
-                if (showDebugMessages) {
-                    Dialog::ShowInfo("Skipping " + prefix + " due to missing required fields", "DynamicQuickPatch");
+                if (Debug::enableConsole) {
+                    std::cout << "[DynamicQuickPatch - Configuration]" << std::endl;
+                    std::cout << "Skipping " << prefix << " due to missing required fields" << std::endl;
+                    std::cout << std::endl;
                 }
                 continue;
             }
             
-            // Parse and validate configuration
+            // Validate variable ID range
             int variableId = stringToInt(varIdStr, 0);
+            if (variableId <= 0 || variableId > maxVariableId) {
+                if (Debug::enableConsole) {
+                    std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                    std::cout << "Error in " << prefix << ": Invalid VariableId '" << varIdStr 
+                           << "'. Must be between 1 and " << maxVariableId << "." << std::endl;
+                    std::cout << std::endl;
+                }
+                hasErrors = true;
+                continue;
+            }
             
-            // Parse the address - handle both decimal and hexadecimal formats
+            // Parse memory address in hex or decimal format
             unsigned int address = 0;
             if (addressStr.substr(0, 2) == "0x" || addressStr.substr(0, 2) == "0X") {
-                // Hexadecimal format
                 try {
-                    // Convert hex string to unsigned long
                     char* endPtr;
                     address = static_cast<unsigned int>(strtoul(addressStr.c_str(), &endPtr, 16));
-                    
-                    // Check if conversion was successful
                     if (*endPtr != '\0') {
-                        address = 0;
+                        if (Debug::enableConsole) {
+                            std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                            std::cout << "Error in " << prefix << ": Invalid hex address format '" << addressStr << "'" << std::endl;
+                            std::cout << std::endl;
+                        }
+                        hasErrors = true;
+                        continue;
                     }
                 } catch (...) {
-                    address = 0;
-                }
-            } else {
-                // Decimal format
-                address = static_cast<unsigned int>(stringToInt(addressStr, 0));
-            }
-            
-            // Check for configuration errors
-            if (variableId <= 0 || variableId > maxVariableId) {
-                std::stringstream ss;
-                ss << "Error in " << prefix << ": Invalid VariableId '" << varIdStr 
-                   << "'. Must be between 1 and " << maxVariableId << ".";
-                errorMessages += ss.str() + "\n";
-                hasErrors = true;
-                continue;
-            }
-            
-            if (address == 0) {
-                std::stringstream ss;
-                ss << "Error in " << prefix << ": Invalid Address '" << addressStr 
-                   << "'. Must be a valid memory address (e.g., 0x496AC7).";
-                errorMessages += ss.str() + "\n";
-                hasErrors = true;
-                continue;
-            }
-            
-            // Determine the type
-            QuickPatchType type;
-            if (typeStr == "8bit" || typeStr == "%" || typeStr == "8BIT") {
-                type = QPTYPE_8BIT;
-            } else if (typeStr == "32bit" || typeStr == "#" || typeStr == "32BIT") {
-                type = QPTYPE_32BIT;
-            } else if (typeStr == "hex" || typeStr == "HEX" || typeStr == "raw" || typeStr == "RAW") {
-                type = QPTYPE_HEX_RAW;
-                
-                // Validate hex string for HEX_RAW type
-                if (!isValidHexString(hexValueStr)) {
-                    std::stringstream ss;
-                    ss << "Error in " << prefix << ": Invalid HexValue '" << hexValueStr 
-                       << "'. Must be a valid hex string with even length (e.g., '1A2B3C').";
-                    errorMessages += ss.str() + "\n";
+                    if (Debug::enableConsole) {
+                        std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                        std::cout << "Error in " << prefix << ": Failed to parse hex address '" << addressStr << "'" << std::endl;
+                        std::cout << std::endl;
+                    }
                     hasErrors = true;
                     continue;
                 }
             } else {
-                std::stringstream ss;
-                ss << "Error in " << prefix << ": Invalid Type '" << typeStr 
-                   << "'. Must be '8bit', '32bit', or 'hex'.";
-                errorMessages += ss.str() + "\n";
+                address = static_cast<unsigned int>(stringToInt(addressStr, 0));
+                if (address == 0) {
+                    if (Debug::enableConsole) {
+                        std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                        std::cout << "Error in " << prefix << ": Invalid decimal address '" << addressStr << "'" << std::endl;
+                        std::cout << std::endl;
+                    }
+                hasErrors = true;
+                continue;
+            }
+            }
+            
+            // Parse and validate patch type
+            QuickPatchType type;
+            if (typeStr == "8bit") {
+                type = QPTYPE_8BIT;
+            } else if (typeStr == "32bit") {
+                type = QPTYPE_32BIT;
+            } else if (typeStr == "hex") {
+                type = QPTYPE_HEX_RAW;
+                // Validate hex string format
+                if (!isValidHexString(hexValueStr)) {
+                    if (Debug::enableConsole) {
+                        std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                        std::cout << "Invalid hex value in " << prefix << std::endl;
+                        std::cout << std::endl;
+                    }
+                    hasErrors = true;
+                    continue;
+                }
+            } else {
+                if (Debug::enableConsole) {
+                    std::cout << "[DynamicQuickPatch - Configuration Error]" << std::endl;
+                    std::cout << "Invalid type '" << typeStr << "' in " << prefix << std::endl;
+                    std::cout << std::endl;
+                }
                 hasErrors = true;
                 continue;
             }
             
-            // Add the valid mapping
+            // Parse load game behavior flag
+            bool applyOnLoadGame = onLoadGameStr == "true";
+            
+            // Create and store valid mapping
             QuickPatchMapping mapping;
             mapping.variableId = variableId;
             mapping.address = address;
             mapping.type = type;
             mapping.hexValue = hexValueStr;
-            mapping.applyOnLoadGame = stringToBool(onLoadGameStr, true);
-            
-            // Debug message to show the mapping being added
-            if (showDebugMessages) {
-                std::stringstream mappingMsg;
-                mappingMsg << "Adding mapping:\n"
-                          << "Variable ID: " << variableId << "\n"
-                          << "Address: 0x" << std::hex << std::uppercase << address << "\n"
-                          << "Type: " << (type == QPTYPE_8BIT ? "8-bit" : (type == QPTYPE_32BIT ? "32-bit" : "Hex")) << "\n"
-                          << "Apply on load game: " << (mapping.applyOnLoadGame ? "Yes" : "No");
-                if (type == QPTYPE_HEX_RAW) {
-                    mappingMsg << "\nHex value: " << hexValueStr;
-                }
-                Dialog::ShowInfo(mappingMsg.str(), "DynamicQuickPatch");
-            }
+            mapping.applyOnLoadGame = applyOnLoadGame;
             
             quickpatchMappings.push_back(mapping);
             quickpatchCount++;
         }
         
-        // Show configuration summary if debug is enabled
-        if (showDebugMessages) {
-            std::stringstream summaryMsg;
-            summaryMsg << "Configuration loaded successfully.\n"
-                       << "Loaded " << quickpatchCount << " quickpatch mappings.\n"
-                       << "Maximum Variable ID: " << maxVariableId << "\n";
-            
+        // Log configuration summary
+        if (Debug::enableConsole) {
+            std::cout << "[DynamicQuickPatch - Configuration Summary]" << std::endl;
+            std::cout << "Configuration loaded successfully." << std::endl;
+            std::cout << "Loaded " << quickpatchCount << " quickpatch mappings." << std::endl;
+            std::cout << "Maximum Variable ID: " << maxVariableId << std::endl;
             if (hasErrors) {
-                summaryMsg << "\nWarning: Some entries had errors:\n" << errorMessages;
-            }
-            
-            Dialog::ShowInfo(summaryMsg.str(), "DynamicQuickPatch - Configuration");
+                std::cout << "Warning: Some entries had errors and were skipped." << std::endl;
+        }
+            std::cout << std::endl;
         }
         
-        // Return true if we have at least one valid mapping
-        return quickpatchCount > 0;
-    }
-    
-    /**
-     * @brief Gets the list of quickpatch mappings
-     * 
-     * @return const std::vector<QuickPatchMapping>& Reference to the quickpatch mappings vector
-     */
-    const std::vector<QuickPatchMapping>& getMappings() {
-        return quickpatchMappings;
-    }
-    
-    /**
-     * @brief Gets the debug message flag
-     * 
-     * @return bool True if debug messages are enabled
-     */
-    bool isDebugEnabled() {
-        return showDebugMessages;
-    }
-    
-    /**
-     * @brief Gets the maximum variable ID
-     * 
-     * @return int The maximum variable ID
-     */
-    int getMaxVariableId() {
-        return maxVariableId;
+        return true;
     }
 } // namespace DynamicQuickPatchConfig

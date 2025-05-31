@@ -1,9 +1,9 @@
-/*
- * Entry point for the DynamicQuickPatch plugin for RPG Maker 2003.
- * This plugin maps RPG Maker 2003 variables to memory addresses,
- * allowing dynamic modification of quickpatches during gameplay.
- * 
- * All implementation details are organized in the DynamicQuickPatch namespace.
+/**
+ * @file main.cpp
+ * @brief Entry point for the DynamicQuickPatch plugin for RPG Maker 2003.
+ * @details Contains DynRPG callback functions that serve as entry points from the game engine
+ *          into the plugin's functionality. All implementation details are organized in the
+ *          DynamicQuickPatch namespace.
  */
 
 // Core DynRPG header
@@ -11,82 +11,94 @@
 
 // Standard library headers
 #include <algorithm>  // For std::min, std::max
+#include <fstream>    // For file operations
+#include <iostream>   // For console output
 #include <limits>     // For numeric limits
-#include <map>        // For configuration storage
+#include <map>        // For configuration and memory storage
 #include <set>        // For storing unique indices
 #include <sstream>    // For string formatting
 #include <string>     // For text processing
 #include <vector>     // For storing quickpatch mappings
-#include <windows.h>  // For MessageBox
+#include <stdio.h>    // For freopen, stdout, stdin
+#include <stdlib.h>   // For atoi
+#include <stdint.h>   // For standard integer types
+#include <windows.h>  // For console functions and memory operations
 
 // Main implementation file - contains all namespaced code
 #include "dynamic_quickpatch.cpp"
 
-// ========================================================================
-// DynRPG plugin entry points - global callback functions
-// These are called by the DynRPG system and forward to our implementation
-// ========================================================================
+/**
+ * @defgroup callbacks DynRPG Plugin Callbacks
+ * @brief Global callback functions called by the DynRPG system.
+ * @details These functions serve as the interface between the RPG Maker 2003 engine
+ *          and the DynamicQuickPatch plugin functionality.
+ */
 
 /**
- * @brief DynRPG callback: Plugin initialization
- * 
- * @param pluginName Name of the plugin (used to load configuration)
- * @return bool True if initialization succeeded, false if it failed
- * 
- * @note Called once when the plugin is first loaded
- *       Loads all configuration from DynRPG.ini
+ * @brief Initializes the DynamicQuickPatch plugin.
+ * @param pluginName Name of the plugin section in DynRPG.ini.
+ * @return True if initialization succeeded.
+ * @details Called once when the plugin is first loaded. Reads configuration from DynRPG.ini
+ *          and sets up debug output if enabled.
+ * @see DynamicQuickPatch::onStartup
  */
 bool onStartup(char *pluginName) {
-    // Load configuration and check the result
-    bool configLoaded = DynamicQuickPatchConfig::loadConfig(pluginName);
-    
-    // Always return true to prevent crashes
-    return true;
+    return DynamicQuickPatch::onStartup(pluginName);
 }
 
 /**
- * @brief DynRPG callback: Called when a variable is about to be set
- * 
- * @param id The ID of the variable being set
- * @param value The new value that will be assigned to the variable
- * @return bool Always returns true to continue normal processing
- * 
- * @note Used to intercept variable changes and update memory patches
+ * @brief Processes new game or title screen return events.
+ * @details Resets all memory patches to their original values when starting a new game
+ *          or when returning to the title screen with F12 key.
+ * @see DynamicQuickPatch::onNewGame
  */
-bool onSetVariable(int id, int value) {
-    return DynamicQuickPatch::onSetVariable(id, value);
+void onNewGame() {
+    DynamicQuickPatch::onNewGame();
 }
 
 /**
- * @brief DynRPG callback: Called when a save game is loaded
- * 
- * @param id The save slot ID
- * @param data Pointer to save data
- * @param length Length of save data
- * 
- * @note Used to detect when a save game is loaded to force update quickpatches
+ * @brief Processes save game loading.
+ * @param id Save slot ID.
+ * @param data Pointer to save data.
+ * @param length Length of save data.
+ * @details Sets a flag to trigger memory patch updates when returning to the map scene.
+ * @see DynamicQuickPatch::onLoadGame
  */
 void onLoadGame(int id, char* data, int length) {
     DynamicQuickPatch::onLoadGame(id, data, length);
 }
 
 /**
- * @brief DynRPG callback: Called every frame
- * 
- * @param scene Current game scene
- * 
- * @note Used to monitor when a save is loaded and the player returns to the map
+ * @brief Performs cleanup when the plugin is unloaded.
+ * @note Called when the plugin is being unloaded or the game exits.
+ * @see DynamicQuickPatch::onExit
+ */
+void onExit() {
+    DynamicQuickPatch::onExit();
+}
+
+/**
+ * @brief Frame update handler.
+ * @param scene Current game scene.
+ * @details Updates memory patches when returning to map after loading.
+ *          Only applies patches configured with OnLoadGame=true.
+ * @see DynamicQuickPatch::onFrame
  */
 void onFrame(RPG::Scene scene) {
     DynamicQuickPatch::onFrame(scene);
 }
 
 /**
- * @brief DynRPG callback: Called when starting a new game or returning to title screen
- * 
- * @note Used to reset all memory patches when starting a new game or
- *       when returning to the title screen with F12 key
+ * @brief Processes variable changes during gameplay.
+ * @param id Variable ID being changed.
+ * @param value New value of the variable.
+ * @return True to allow the change.
+ * @details Intercepts variable changes and updates memory patches based on the
+ *          configured variable-to-memory mappings.
+ * @see DynamicQuickPatch::onSetVariable
  */
-void onNewGame() {
-    DynamicQuickPatch::onNewGame();
+bool onSetVariable(int id, int value) {
+    return DynamicQuickPatch::onSetVariable(id, value);
 }
+
+/** @} */ // end of callbacks group

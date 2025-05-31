@@ -1,7 +1,7 @@
 #define PLUGIN_NAME "DynamicQuickPatch"
 #define PLUGIN_INTERNAL_NAME "dynamic_quickpatch.dll"
-#define PLUGIN_VERSION      1,0,0,0
-#define PLUGIN_VERSION_TXT "1.0.0.0"
+#define PLUGIN_VERSION      1,0,1,0
+#define PLUGIN_VERSION_TXT "1.0.1.0"
 #define PLUGIN_COPYRIGHT "(C) 2025 Hammy"
 #define PLUGIN_COMMENTS "Dynamic memory modification system for RPG Maker 2003"
 

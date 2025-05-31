@@ -1,33 +1,48 @@
-/*
- * Core implementation for the DynamicQuickPatch plugin.
- * Contains all the memory patching functionality.
+/**
+ * @file dynamic_quickpatch.cpp
+ * @brief Main implementation of the DynamicQuickPatch plugin.
+ * @details Contains the primary DynamicQuickPatch namespace with all callback implementations
+ *          and core functionality for managing dynamic memory patching during gameplay.
  */
 
-// Include our modular code
-#include "dialog.cpp"
+#include "dynamic_quickpatch_debug.cpp"
 #include "dynamic_quickpatch_config.cpp"
 
+/**
+ * @namespace DynamicQuickPatch
+ * @brief Core implementation namespace for the DynamicQuickPatch plugin.
+ * @details Handles dynamic memory patching and variable monitoring during gameplay.
+ *          Provides functionality to automatically update memory values based on
+ *          RPG Maker variable changes and game state.
+ */
 namespace DynamicQuickPatch
 {
-    // Flag to track when a game is loaded
+    /** @brief Tracks when a game has been loaded. */
     static bool gameJustLoaded = false;
 
-    // Constants for data type ranges
+    /** @brief Minimum value for 8-bit signed integers. */
     const int DQP_INT8_MIN = -127;
+    /** @brief Maximum value for 8-bit signed integers. */
     const int DQP_INT8_MAX = 127;
+    /** @brief Minimum value for 32-bit signed integers. */
     const int DQP_INT32_MIN = std::numeric_limits<int>::min();
+    /** @brief Maximum value for 32-bit signed integers. */
     const int DQP_INT32_MAX = std::numeric_limits<int>::max();
 
-    // Map to store original memory values before patching
-    // Key: memory address, Value: vector of original bytes
+    /**
+     * @brief Map storing original memory values before patching.
+     * @details Key: memory address, Value: vector of original bytes.
+     *          Used to restore original memory state when patches are disabled.
+     */
     static std::map<unsigned int, std::vector<unsigned char>> originalMemoryValues;
 
     /**
-     * @brief Helper function to check if we have stored original memory values
-     *
-     * @param address Memory address to check
-     * @param length Number of bytes to check
-     * @return bool True if we have stored values for this address range
+     * @brief Checks if original memory values are stored.
+     * @param address Memory address to check.
+     * @param length Number of bytes to check.
+     * @return True if values are stored for this address range.
+     * @details Verifies if original memory values exist for the specified address
+     *          range before performing memory operations.
      */
     bool hasOriginalValues(unsigned int address, size_t length) {
         return originalMemoryValues.find(address) != originalMemoryValues.end() &&
@@ -35,87 +50,89 @@ namespace DynamicQuickPatch
     }
 
     /**
-     * @brief Helper function to store original memory values
-     *
-     * @param address Memory address to store
-     * @param length Number of bytes to store
+     * @brief Stores original memory values before patching.
+     * @param address Memory address to store.
+     * @param length Number of bytes to store.
+     * @details Saves the original memory values before applying patches to allow
+     *          restoration of the original state when needed.
+     * @warning Will not store values if address is invalid or memory access fails.
      */
     void storeOriginalValues(unsigned int address, size_t length) {
-        // Skip if we already have this address stored
+        // Skip if values already exist
         if (hasOriginalValues(address, length)) {
             return;
         }
 
-        // Add safety check for valid memory address
+        // Validate memory address range
         if (address == 0 || address >= 0xFFFFFFFF - length) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Invalid memory address: 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Invalid memory address: 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return;
         }
 
-        // Use standard C++ exception handling to catch access violations
         try {
-            // Store the original values
+            // Read current memory values
             std::vector<unsigned char> originalBytes;
             for (size_t i = 0; i < length; i++) {
                 originalBytes.push_back(*((unsigned char*)(address + i)));
             }
             originalMemoryValues[address] = originalBytes;
 
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Stored original memory values at 0x" << std::hex << std::uppercase << address
-                   << " (" << std::dec << length << " bytes)";
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Original Values Stored");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory]" << std::endl;
+                std::cout << "Stored original memory values at 0x" << std::hex << std::uppercase << address
+                         << " (" << std::dec << length << " bytes)" << std::endl;
+                std::cout << std::endl;
             }
         } catch (...) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Memory access violation at 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Memory access violation at 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return;
         }
-
-        // Debug message is now inside the try block
     }
 
     /**
-     * @brief Helper function to restore original memory values
-     *
-     * @param address Memory address to restore
-     * @return bool True if the restore was successful
+     * @brief Restores original memory values.
+     * @param address Memory address to restore.
+     * @return True if restore was successful.
+     * @details Restores the original memory values that were saved before patching.
+     * @warning Will fail if address is invalid or memory access fails.
      */
     bool restoreOriginalValues(unsigned int address) {
+        // Verify original values exist
         if (originalMemoryValues.find(address) == originalMemoryValues.end()) {
             return false;
         }
 
-        // Add safety check for valid memory address
+        // Validate memory address range
         if (address == 0 || address >= 0xFFFFFFFF - originalMemoryValues[address].size()) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Invalid memory address for restore: 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Invalid memory address for restore: 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return false;
         }
 
         bool success = false;
         try {
+            // Write original values back to memory
             const auto& originalBytes = originalMemoryValues[address];
             for (size_t i = 0; i < originalBytes.size(); i++) {
                 *((unsigned char*)(address + i)) = originalBytes[i];
             }
             success = true;
         } catch (...) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Memory access violation during restore at 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Memory access violation during restore at 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return false;
         }
@@ -124,239 +141,244 @@ namespace DynamicQuickPatch
     }
 
     /**
-     * @brief Helper function to write an 8-bit signed integer (% notation)
-     *
-     * @param address Memory address to write to
-     * @param value The value to write
+     * @brief Writes an 8-bit signed integer to memory.
+     * @param address Memory address to write to.
+     * @param value The value to write.
+     * @details Writes an 8-bit value to memory, storing the original value first
+     *          if not already stored.
+     * @warning Will not write if address is invalid or memory access fails.
+     * @see storeOriginalValues
      */
     void write8bitValue(unsigned int address, int value) {
-        // Value range is already validated in updateQuickPatch
-
-        // Add safety check for valid memory address
+        // Validate memory address
         if (address == 0 || address >= 0xFFFFFFFF) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Invalid memory address for 8-bit write: 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Invalid memory address for 8-bit write: 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return;
         }
 
-        // Store original value if we don't have it yet
+        // Store original value if needed
         if (!hasOriginalValues(address, 1)) {
             storeOriginalValues(address, 1);
         }
 
         try {
+            // Write new value to memory
             *((char*)address) = (char)value;
         } catch (...) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Memory access violation during 8-bit write at 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Memory access violation during 8-bit write at 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
         }
     }
 
     /**
-     * @brief Helper function to write a 32-bit signed integer (# notation)
-     *
-     * @param address Memory address to write to
-     * @param value The value to write
+     * @brief Writes a 32-bit signed integer to memory.
+     * @param address Memory address to write to.
+     * @param value The value to write.
+     * @details Writes a 32-bit value to memory, storing the original value first
+     *          if not already stored.
+     * @warning Will not write if address is invalid or memory access fails.
+     * @see storeOriginalValues
      */
     void write32bitValue(unsigned int address, int value) {
-        // Value range is already validated in updateQuickPatch
-
-        // Add safety check for valid memory address
+        // Validate memory address
         if (address == 0 || address >= 0xFFFFFFFF - sizeof(int)) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Invalid memory address for 32-bit write: 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Invalid memory address for 32-bit write: 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return;
         }
 
-        // Store original value if we don't have it yet
+        // Store original value if needed
         if (!hasOriginalValues(address, sizeof(int))) {
             storeOriginalValues(address, sizeof(int));
         }
 
         try {
+            // Write new value to memory
             *((int*)address) = value;
         } catch (...) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Memory access violation during 32-bit write at 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Memory access violation during 32-bit write at 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
         }
     }
 
     /**
-     * @brief Helper function to write raw hex values
-     *
-     * @param address Memory address to write to
-     * @param hexString Hexadecimal string to convert and write
+     * @brief Writes raw hex values to memory.
+     * @param address Memory address to write to.
+     * @param hexString Hexadecimal string to convert and write.
+     * @details Converts a hex string to bytes and writes them to memory,
+     *          storing the original values first if not already stored.
+     * @warning Will not write if address is invalid or memory access fails.
+     * @see storeOriginalValues
      */
     void writeHexValue(unsigned int address, const std::string& hexString) {
-        // Store original values if we don't have them yet
+        // Calculate number of bytes to write
         size_t byteCount = hexString.length() / 2;
+
+        // Store original values if needed
         if (!hasOriginalValues(address, byteCount)) {
             storeOriginalValues(address, byteCount);
         }
 
-        // Add safety check for valid memory address
+        // Validate memory address range
         if (address == 0 || address >= 0xFFFFFFFF - byteCount) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Invalid memory address for hex write: 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Invalid memory address for hex write: 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
             return;
         }
 
         try {
-            // Process hex string two characters at a time
+            // Convert hex string to bytes and write to memory
             for (size_t i = 0; i < hexString.length(); i += 2) {
-                if (i + 1 >= hexString.length()) break; // Ensure we have a complete byte
+                // Skip incomplete byte pairs
+                if (i + 1 >= hexString.length()) break;
 
-                // Convert two hex characters to one byte
+                // Convert hex pair to byte value
                 std::string byteStr = hexString.substr(i, 2);
                 unsigned char byte = (unsigned char)strtol(byteStr.c_str(), NULL, 16);
 
-                // Write the byte to memory
+                // Write byte to memory
                 *((unsigned char*)(address + (i/2))) = byte;
             }
         } catch (...) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream ss;
-                ss << "Memory access violation during hex write at 0x" << std::hex << std::uppercase << address;
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Memory Error]" << std::endl;
+                std::cout << "Memory access violation during hex write at 0x" << std::hex << std::uppercase << address << std::endl;
+                std::cout << std::endl;
             }
         }
     }
 
     /**
-     * @brief Validates if a value is within the valid range for a specific type
-     *
-     * @param value The value to validate
-     * @param type The type to validate against
-     * @param variableId The variable ID (for error messages)
-     * @param address The memory address (for error messages)
-     * @return bool True if valid, false if out of range
+     * @brief Validates if a value is within range for a specific type.
+     * @param value The value to validate.
+     * @param type The type to validate against.
+     * @param variableId The variable ID (for error messages).
+     * @param address The memory address (for error messages).
+     * @return True if valid, false if out of range.
+     * @details Checks if a value is within the valid range for its type:
+     *          - 8-bit: -127 to 127
+     *          - 32-bit: Full signed int range
+     *          - Hex: No range validation
      */
     bool validateValue(int value, DynamicQuickPatchConfig::QuickPatchType type,
                        int variableId, unsigned int address) {
         bool isValid = true;
-        std::string errorMsg;
 
         switch (type) {
             case DynamicQuickPatchConfig::QPTYPE_8BIT:
+                // Check 8-bit signed range
                 if (value < DQP_INT8_MIN || value > DQP_INT8_MAX) {
                     isValid = false;
-                    std::stringstream ss;
-                    ss << "Value " << value << " is out of range for 8-bit type!\n"
-                       << "Variable: " << variableId << "\n"
-                       << "Address: 0x" << std::hex << std::uppercase << address << "\n"
-                       << "Valid range: " << std::dec << DQP_INT8_MIN << " to " << DQP_INT8_MAX << "\n"
-                       << "Value will be clamped to fit in range.";
-                    errorMsg = ss.str();
+                    if (Debug::enableConsole) {
+                        std::cout << "[DynamicQuickPatch - Range Warning]" << std::endl;
+                        std::cout << "Value " << value << " is out of range for 8-bit type!" << std::endl;
+                        std::cout << "Variable: " << variableId << std::endl;
+                        std::cout << "Address: 0x" << std::hex << std::uppercase << address << std::endl;
+                        std::cout << "Valid range: " << std::dec << DQP_INT8_MIN << " to " << DQP_INT8_MAX << std::endl;
+                        std::cout << "Value will be clamped to fit in range." << std::endl;
+                        std::cout << std::endl;
+                    }
                 }
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_32BIT:
-                // This is just a sanity check - C++ int should already be 32-bit
-                // It would be extremely rare for a value to be out of this range
+                // Check 32-bit signed range
                 if (value < DQP_INT32_MIN || value > DQP_INT32_MAX) {
                     isValid = false;
-                    std::stringstream ss;
-                    ss << "Value " << value << " is out of range for 32-bit type!\n"
-                       << "Variable: " << variableId << "\n"
-                       << "Address: 0x" << std::hex << std::uppercase << address << "\n"
-                       << "Value may cause undefined behavior.";
-                    errorMsg = ss.str();
+                    if (Debug::enableConsole) {
+                        std::cout << "[DynamicQuickPatch - Range Error]" << std::endl;
+                        std::cout << "Value " << value << " is out of range for 32-bit type!" << std::endl;
+                        std::cout << "Variable: " << variableId << std::endl;
+                        std::cout << "Address: 0x" << std::hex << std::uppercase << address << std::endl;
+                        std::cout << "Value may cause undefined behavior." << std::endl;
+                        std::cout << std::endl;
+                    }
                 }
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
-                // No additional validation needed for hex values
+                // No range validation for hex values
                 break;
-        }
-
-        // Show error message if validation failed and debug is enabled
-        if (!isValid && DynamicQuickPatchConfig::isDebugEnabled()) {
-            Dialog::Show(errorMsg, "DynamicQuickPatch - Range Error");
         }
 
         return isValid;
     }
 
     /**
-     * @brief Updates a quickpatch mapping with a new value
-     *
-     * @param mapping The mapping definition to update
-     * @param value The new value to apply
+     * @brief Updates a quickpatch mapping with a new value.
+     * @param mapping The mapping definition to update.
+     * @param value The new value to apply.
+     * @details Applies the new value to memory according to the mapping type:
+     *          - For 8-bit: Clamps value to valid range
+     *          - For 32-bit: Direct value write
+     *          - For hex: Uses predefined hex string
+     * @note If value is 0, restores original memory values.
      */
     void updateQuickPatch(const DynamicQuickPatchConfig::QuickPatchMapping& mapping, int value) {
-        // If value is 0, restore the original memory values for any patch type
+        // Handle patch deactivation
         if (value == 0) {
-            // Determine size based on type
+            // Determine patch size based on type
             size_t size = 0;
             std::string typeStr;
 
             switch (mapping.type) {
                 case DynamicQuickPatchConfig::QPTYPE_8BIT:
-                    size = 1; // 1 byte for 8-bit values
+                    size = 1;
                     typeStr = "8-bit (%)";
                     break;
 
                 case DynamicQuickPatchConfig::QPTYPE_32BIT:
-                    size = sizeof(int); // 4 bytes for 32-bit values
+                    size = sizeof(int);
                     typeStr = "32-bit (#)";
                     break;
 
                 case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
-                    size = mapping.hexValue.length() / 2; // Each hex pair is one byte
+                    size = mapping.hexValue.length() / 2;
                     typeStr = "Raw Hex";
                     break;
             }
 
-            // Check if we have original values to restore
+            // Restore original memory values if available
             bool restored = false;
-
             if (hasOriginalValues(mapping.address, size)) {
                 restored = restoreOriginalValues(mapping.address);
             }
 
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                std::stringstream addressStream;
-                addressStream << "0x" << std::hex << std::uppercase << mapping.address;
-
-                std::string message;
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Patch Disabled]" << std::endl;
+                std::cout << "QuickPatch Disabled" << std::endl;
+                std::cout << "Variable: " << mapping.variableId << std::endl;
+                std::cout << "Address: 0x" << std::hex << std::uppercase << mapping.address << std::endl;
+                std::cout << "Type: " << typeStr << std::endl;
                 if (restored) {
-                    message = "QuickPatch Disabled\n"
-                              "Variable: " + std::to_string(mapping.variableId) + "\n"
-                              "Address: " + addressStream.str() + "\n"
-                              "Type: " + typeStr + "\n"
-                              "Original memory values restored (variable = 0)";
+                    std::cout << "Original memory values restored (variable = 0)" << std::endl;
                 } else {
-                    message = "QuickPatch Disabled\n"
-                              "Variable: " + std::to_string(mapping.variableId) + "\n"
-                              "Address: " + addressStream.str() + "\n"
-                              "Type: " + typeStr + "\n"
-                              "Patch is now inactive (variable = 0)\n"
-                              "Note: Original values were not available to restore";
+                    std::cout << "Patch is now inactive (variable = 0)" << std::endl;
+                    std::cout << "Note: Original values were not available to restore" << std::endl;
                 }
-
-                Dialog::Show(message, "DynamicQuickPatch - Patch Disabled");
+                std::cout << std::endl;
             }
             return;
         }
 
-        // Determine the old value from the memory address
+        // Read current memory value for logging
         std::string oldValueStr;
-
         switch (mapping.type) {
             case DynamicQuickPatchConfig::QPTYPE_8BIT: {
                 char oldVal = *((char*)mapping.address);
@@ -369,6 +391,7 @@ namespace DynamicQuickPatch
                 break;
             }
             case DynamicQuickPatchConfig::QPTYPE_HEX_RAW: {
+                // Format current memory as hex string
                 std::string hex;
                 size_t hexLen = mapping.hexValue.length();
                 for (size_t i = 0; i < hexLen; i += 2) {
@@ -382,34 +405,31 @@ namespace DynamicQuickPatch
             }
         }
 
-        // Validate the value and apply appropriate range limits
-        // We call validateValue for its side effects (showing warning messages) but don't need the return value
+        // Validate and adjust value if needed
         validateValue(value, mapping.type, mapping.variableId, mapping.address);
         int adjustedValue = value;
 
-        // Apply new value with range clamping if necessary
+        // Apply new value with range clamping
         switch (mapping.type) {
             case DynamicQuickPatchConfig::QPTYPE_8BIT:
-                // Clamp the value to valid range
+                // Clamp value to 8-bit range
                 if (adjustedValue < DQP_INT8_MIN) adjustedValue = DQP_INT8_MIN;
                 if (adjustedValue > DQP_INT8_MAX) adjustedValue = DQP_INT8_MAX;
                 write8bitValue(mapping.address, adjustedValue);
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_32BIT:
-                // Normally we won't need to clamp 32-bit values
                 write32bitValue(mapping.address, adjustedValue);
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
-                // For hex type, we know value > 0 at this point
                 writeHexValue(mapping.address, mapping.hexValue);
                 break;
         }
 
-        // Only display debug message if enabled
-        if (DynamicQuickPatchConfig::isDebugEnabled()) {
-            // Prepare display values
+        // Log memory update details
+        if (Debug::enableConsole) {
+            // Format display values
             std::string typeStr;
             std::string newValueStr;
             std::string rangeInfo;
@@ -435,153 +455,86 @@ namespace DynamicQuickPatch
                     break;
             }
 
-            // Format the address as hexadecimal
-            std::stringstream addressStream;
-            addressStream << "0x" << std::hex << std::uppercase << mapping.address;
-
-            // Build message
-            std::string message = "QuickPatch Updated\n"
-                                "Variable: " + std::to_string(mapping.variableId) + "\n"
-                                "Address: " + addressStream.str() + "\n"
-                                "Type: " + typeStr + "\n"
-                                "Old Value: " + oldValueStr + "\n"
-                                "New Value: " + newValueStr + rangeInfo;
-
-            Dialog::Show(message, "DynamicQuickPatch - Memory Update");
+            std::cout << "[DynamicQuickPatch - Memory Update]" << std::endl;
+            std::cout << "QuickPatch Updated" << std::endl;
+            std::cout << "Variable: " << mapping.variableId << std::endl;
+            std::cout << "Address: 0x" << std::hex << std::uppercase << mapping.address << std::endl;
+            std::cout << "Type: " << typeStr << std::endl;
+            std::cout << "Old Value: " << oldValueStr << std::endl;
+            std::cout << "New Value: " << newValueStr << std::endl;
+            if (!rangeInfo.empty()) {
+                std::cout << rangeInfo << std::endl;
+            }
+            std::cout << std::endl;
         }
     }
 
     /**
-     * @brief Handles variable changes
-     *
-     * @param id ID of the variable being changed
-     * @param value New value of the variable
-     * @return bool Always returns true to continue normal processing
+     * @brief Plugin initialization handler.
+     * @param pluginName Name of the plugin section in DynRPG.ini.
+     * @return True if initialization succeeded.
+     * @details Loads configuration from DynRPG.ini and initializes debug output
+     *          if enabled in the configuration.
      */
-    bool onSetVariable(int id, int value) {
-        const auto& mappings = DynamicQuickPatchConfig::getMappings();
+    bool onStartup(char *pluginName) {
+        // Load plugin configuration
+        std::map<std::string, std::string> configuration = RPG::loadConfiguration(pluginName);
 
-        // Use find_if to locate the mapping with the matching variable ID
-        auto it = std::find_if(mappings.begin(), mappings.end(),
-            [id](const DynamicQuickPatchConfig::QuickPatchMapping& mapping) {
-                return mapping.variableId == id;
-            });
-
-        if (it != mappings.end()) {
-            updateQuickPatch(*it, value);
+        // Initialize debug console with default disabled state
+        Debug::enableConsole = false;
+        if (configuration.find("EnableConsole") != configuration.end()) {
+            Debug::enableConsole = configuration["EnableConsole"] == "true";
         }
 
-        // Always return true to continue normal processing
-        return true;
-    }
-
-    /**
-     * @brief Handles game loading
-     *
-     * @param id Save slot ID
-     * @param data Pointer to save data
-     * @param length Length of save data
-     */
-    void onLoadGame(int id, char* data, int length) {
-        // Set the flag to indicate a game was just loaded
-        gameJustLoaded = true;
-    }
-
-    /**
-     * @brief Frame update handler
-     *
-     * @param scene Current game scene
-     */
-    void onFrame(RPG::Scene scene) {
-        // Check if a game was loaded and we're in the map scene
-        if (gameJustLoaded && scene == RPG::SCENE_MAP) {
-            if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                Dialog::Show("Returned to map after loading. Updating memory patches...",
-                               "DynamicQuickPatch - Updating Memory");
-            }
-
-            // Update variable mappings that are configured to apply on load game
-            const auto& mappings = DynamicQuickPatchConfig::getMappings();
-            int appliedCount = 0;
-            int skippedCount = 0;
-
-            for (const auto& mapping : mappings) {
-                // Only apply patches that are configured to run on load game
-                if (mapping.applyOnLoadGame) {
-                    // Add safety check for variable ID bounds
-                    if (mapping.variableId > 0 && mapping.variableId <= DynamicQuickPatchConfig::getMaxVariableId()) {
-                        int value = RPG::variables[mapping.variableId];
-                        updateQuickPatch(mapping, value);
-                        appliedCount++;
-                    } else {
-                        if (DynamicQuickPatchConfig::isDebugEnabled()) {
-                            std::stringstream ss;
-                            ss << "Invalid variable ID: " << mapping.variableId;
-                            Dialog::Show(ss.str(), "DynamicQuickPatch - Error");
-                        }
-                    }
-                } else {
-                    skippedCount++;
-                }
-            }
-
-            // Show debug info about applied patches
-            if (DynamicQuickPatchConfig::isDebugEnabled() && (appliedCount > 0 || skippedCount > 0)) {
-                std::stringstream ss;
-                ss << "Applied " << appliedCount << " patches on load game.\n"
-                   << "Skipped " << skippedCount << " patches (OnLoadGame=false).";
-                Dialog::Show(ss.str(), "DynamicQuickPatch - Load Game Patches");
-            }
-
-            // Reset the flag
-            gameJustLoaded = false;
+        // Initialize debug console if enabled
+        if (Debug::enableConsole) {
+            Debug::initConsole();
         }
+
+        // Load and validate configuration settings
+        return DynamicQuickPatchConfig::loadConfig(pluginName);
     }
 
     /**
-     * @brief Handles starting a new game or returning to the title screen
-     *
-     * This is called when starting a new game or when returning to the title screen
-     * using F12. We need to restore all original memory values to prevent patches
-     * from persisting across game sessions.
+     * @brief Handles starting a new game or returning to title screen.
+     * @details Restores all original memory values to prevent patches from
+     *          persisting across game sessions.
      */
     void onNewGame() {
-        // Restore all original memory values for all types of patches
+        // Track restoration results
         int restoredCount = 0;
         int failedCount = 0;
 
-        // Get all mappings to find addresses that need to be restored
+        // Get unique addresses from mappings
         const auto& mappings = DynamicQuickPatchConfig::getMappings();
-
-        // Keep track of addresses we've already processed to avoid duplicates
         std::set<unsigned int> processedAddresses;
 
         for (const auto& mapping : mappings) {
-            // Skip if we've already processed this address
+            // Skip already processed addresses
             if (processedAddresses.find(mapping.address) != processedAddresses.end()) {
                 continue;
             }
 
-            // Mark this address as processed
+            // Mark address as processed
             processedAddresses.insert(mapping.address);
 
-            // Determine size based on type
+            // Calculate patch size based on type
             size_t size = 0;
             switch (mapping.type) {
                 case DynamicQuickPatchConfig::QPTYPE_8BIT:
-                    size = 1; // 1 byte for 8-bit values
+                    size = 1;
                     break;
 
                 case DynamicQuickPatchConfig::QPTYPE_32BIT:
-                    size = 4; // 4 bytes for 32-bit values
+                    size = 4;
                     break;
 
                 case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
-                    size = mapping.hexValue.length() / 2; // Each hex pair is one byte
+                    size = mapping.hexValue.length() / 2;
                     break;
             }
 
-            // Attempt to restore original values if we have them
+            // Attempt to restore original values
             if (hasOriginalValues(mapping.address, size)) {
                 bool success = restoreOriginalValues(mapping.address);
                 if (success) {
@@ -592,19 +545,117 @@ namespace DynamicQuickPatch
             }
         }
 
-        // Show debug info about restored memory values
-        if (DynamicQuickPatchConfig::isDebugEnabled() && (restoredCount > 0 || failedCount > 0)) {
-            std::stringstream ss;
-            ss << "Restored " << restoredCount << " memory locations\n";
-
+        // Log restoration results
+        if (Debug::enableConsole && (restoredCount > 0 || failedCount > 0)) {
+            std::cout << "[DynamicQuickPatch - Memory Reset]" << std::endl;
+            std::cout << "Restored " << restoredCount << " memory locations" << std::endl;
             if (failedCount > 0) {
-                ss << "Failed to restore " << failedCount << " memory locations";
+                std::cout << "Failed to restore " << failedCount << " memory locations" << std::endl;
             }
-
-            Dialog::Show(ss.str(), "DynamicQuickPatch - Memory Reset");
+            std::cout << std::endl;
         }
 
-        // Clear the originalMemoryValues map to start fresh
+        // Clear stored memory values
         originalMemoryValues.clear();
+    }
+
+    /**
+     * @brief Handles game loading.
+     * @param id Save slot ID.
+     * @param data Pointer to save data.
+     * @param length Length of save data.
+     * @details Sets a flag to trigger patch updates when returning to map.
+     */
+    void onLoadGame(int id, char* data, int length) {
+        // Set flag to trigger patch updates
+        gameJustLoaded = true;
+    }
+
+    /**
+     * @brief Plugin shutdown handler.
+     * @details Called when the plugin is being unloaded. Cleans up console
+     *          resources if debug output was enabled.
+     */
+    void onExit() {
+        // Cleanup console resources
+        if (Debug::enableConsole) {
+            Debug::cleanupConsole();
+        }
+    }
+
+    /**
+     * @brief Frame update handler.
+     * @param scene Current game scene.
+     * @details Updates memory patches when returning to map after loading.
+     *          Only applies patches configured with OnLoadGame=true.
+     */
+    void onFrame(RPG::Scene scene) {
+        // Check for map return after game load
+        if (gameJustLoaded && scene == RPG::SCENE_MAP) {
+            if (Debug::enableConsole) {
+                std::cout << "[DynamicQuickPatch - Load Game]" << std::endl;
+                std::cout << "Returned to map after loading. Updating memory patches..." << std::endl;
+                std::cout << std::endl;
+            }
+
+            // Update patches configured for load game
+            const auto& mappings = DynamicQuickPatchConfig::getMappings();
+            int appliedCount = 0;
+            int skippedCount = 0;
+
+            for (const auto& mapping : mappings) {
+                if (mapping.applyOnLoadGame) {
+                    // Validate variable ID range
+                    if (mapping.variableId > 0 && mapping.variableId <= DynamicQuickPatchConfig::getMaxVariableId()) {
+                        int value = RPG::variables[mapping.variableId];
+                        updateQuickPatch(mapping, value);
+                        appliedCount++;
+                    } else {
+                        if (Debug::enableConsole) {
+                            std::cout << "[DynamicQuickPatch - Load Game Error]" << std::endl;
+                            std::cout << "Invalid variable ID: " << mapping.variableId << std::endl;
+                            std::cout << std::endl;
+                        }
+                    }
+                } else {
+                    skippedCount++;
+                }
+            }
+
+            // Log patch update summary
+            if (Debug::enableConsole && (appliedCount > 0 || skippedCount > 0)) {
+                std::cout << "[DynamicQuickPatch - Load Game Summary]" << std::endl;
+                std::cout << "Applied " << appliedCount << " patches on load game." << std::endl;
+                std::cout << "Skipped " << skippedCount << " patches (OnLoadGame=false)." << std::endl;
+                std::cout << std::endl;
+            }
+
+            // Reset load game flag
+            gameJustLoaded = false;
+        }
+    }
+
+    /**
+     * @brief Handles variable changes.
+     * @param id ID of the variable being changed.
+     * @param value New value of the variable.
+     * @return Always returns true to continue normal processing.
+     * @details Checks if the changed variable has a quickpatch mapping and
+     *          updates memory if needed.
+     */
+    bool onSetVariable(int id, int value) {
+        // Find mapping for this variable ID
+        const auto& mappings = DynamicQuickPatchConfig::getMappings();
+        auto it = std::find_if(mappings.begin(), mappings.end(),
+            [id](const DynamicQuickPatchConfig::QuickPatchMapping& mapping) {
+                return mapping.variableId == id;
+            });
+
+        // Update patch if mapping exists
+        if (it != mappings.end()) {
+            updateQuickPatch(*it, value);
+        }
+
+        return true;
     }
 } // namespace DynamicQuickPatch

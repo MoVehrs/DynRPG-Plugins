@@ -15,29 +15,93 @@ MoveTitleWindow=490821,#144,490828,#56
 ```
 
 This plugin takes the concept further by:
-1. Allowing memory modifications to be changed dynamically during gameplay.
-2. Mapping RPG Maker variables to specific memory addresses.
-3. Automatically updating memory when variables change.
-4. Ensuring memory is updated correctly when loading saved games and reset when starting a new game.
+1. Allowing memory modifications to be changed dynamically during gameplay
+2. Mapping RPG Maker variables to specific memory addresses
+3. Automatically updating memory when variables change
+4. Ensuring memory is updated correctly when loading saved games and reset when starting a new game
 
 ## Features
 
-- Map RPG Maker variables to specific memory addresses.
-- Support for three value formats (same as quickpatches):
-  - 8-bit signed integers (% notation).
-  - 32-bit signed integers (# notation).
-  - Raw hexadecimal values.
-- Automatic memory updates when variable values change.
-- Configurable automatic updates when loading saved games (can be enabled/disabled per patch).
-- Automatic restoration of original memory values when starting a new game.
-- Configurable variable ID range to match your game's database.
-- Range validation to prevent invalid memory writes.
-- Optional debug messages showing memory changes.
+- Map RPG Maker variables to specific memory addresses (format: 0x followed by 6 hex digits)
+- Support for three value formats:
+  - 8-bit signed integers (-127 to 127, with value clamping)
+  - 32-bit signed integers
+  - Raw hexadecimal values
+- Automatic memory updates when variable values change
+- Configurable automatic updates when loading saved games
+- Automatic restoration of original memory values
+- Configurable variable ID range
+- Comprehensive memory safety features
+- Detailed debug output system
+- Up to 100 QuickPatch mappings supported
 
 ## Installation
 
-1. Place the `dynamic_quickpatch.dll` file in your game's DynPlugins folder.
-2. Configure the plugin in your `DynRPG.ini` file (see below).
+1. Place the `dynamic_quickpatch.dll` file in your game's DynPlugins folder
+2. Configure the plugin in your `DynRPG.ini` file (see Configuration section)
+
+## Technical Details
+
+### Value Types and Ranges
+
+1. **8-bit Values (8bit or % type)**
+   - Range: -127 to 127
+   - Values outside range are automatically clamped
+   - Example: Variable value 200 becomes 127
+
+2. **32-bit Values (32bit or # type)**
+   - Full 32-bit signed integer range
+   - No value clamping applied
+   - Direct value mapping
+
+3. **Hex Values (hex type)**
+   - Must be even length (complete byte pairs)
+   - Variable acts as on/off switch (0 = off, >0 = on)
+   - Original memory restored when disabled
+
+### Memory Safety Features
+
+1. **Address Requirements**
+   - Must use format: 0x followed by exactly 6 hex digits
+   - Example: 0x401234 (correct), 0x00401234 (incorrect)
+   - Decimal addresses are not supported
+   - Rejects address 0x000000
+   - Rejects addresses near 0xFFFFFF
+   - Validates length for multi-byte operations
+
+2. **Original Value Storage**
+   - Stores original memory before patching
+   - Restores original values when:
+     - Patch is disabled (variable = 0)
+     - New game is started
+     - Returning to title screen
+
+3. **Error Handling**
+   - Invalid addresses are rejected
+   - Memory access violations are caught
+   - Configuration errors are logged
+   - Invalid hex strings are rejected
+
+### Debug System
+
+1. **Console Window**
+   - Optional debug console (EnableConsole setting)
+   - Multiple message categories:
+     - [DynamicQuickPatch - Configuration]
+     - [DynamicQuickPatch - Memory]
+     - [DynamicQuickPatch - Memory Error]
+     - [DynamicQuickPatch - Range Warning]
+     - [DynamicQuickPatch - Patch Disabled]
+     - [DynamicQuickPatch - Memory Update]
+     - [DynamicQuickPatch - Load Game]
+
+2. **Debug Output Format**
+   ```
+   [DynamicQuickPatch - Category]
+   Action or Status Message
+   Relevant Details...
+   Additional Information...
+   ```
 
 ## Configuration
 
@@ -45,34 +109,19 @@ Configure the plugin in `DynRPG.ini` using the following format:
 
 ```ini
 [dynamic_quickpatch]
-; Enable or disable debug message boxes
-ShowDebugMessages=true|false
+; Debug Console Setting
+EnableConsole=true|false
 
-; Maximum variable ID (default: 1000)
+; Maximum Variable ID
 MaxVariableId=NUMBER
 
-; QuickPatch mapping pattern:
+; QuickPatch Mapping Pattern (up to 100 entries)
 QuickPatchN_VariableId=VARIABLE_ID
-QuickPatchN_Address=MEMORY_ADDRESS
+QuickPatchN_Address=MEMORY_ADDRESS (must use 0x prefix and 6 digits)
 QuickPatchN_Type=TYPE
-QuickPatchN_HexValue=HEX_STRING (only for hex type)
-QuickPatchN_OnLoadGame=true|false (optional)
+QuickPatchN_HexValue=HEX_STRING
+QuickPatchN_OnLoadGame=true|false
 ```
-
-### Configuration Parameters
-
-- `ShowDebugMessages`: Set to `true` to enable debug message boxes showing all memory changes, or `false` to disable them.
-- `MaxVariableId`: The maximum variable ID to allow in your configuration (default: 1000). Set this to match the maximum variable ID in your game's database.
-- `QuickPatchN_VariableId`: The RPG Maker variable ID (1 to MaxVariableId) that will control this memory address.
-- `QuickPatchN_Address`: The memory address to patch, in hexadecimal format with `0x` prefix (e.g., `0x496AC7`).
-- `QuickPatchN_Type`: The type of value to write:
-  - `8bit` (or `%`): 8-bit signed integer (-127 to 127).
-  - `32bit` (or `#`): 32-bit signed integer.
-  - `hex`: Raw hexadecimal bytes.
-- `QuickPatchN_HexValue`: For `hex` type only, the hexadecimal string to write (e.g., `90ABCD`).
-- `QuickPatchN_OnLoadGame`: Optional setting to control whether this patch should be applied when loading a save game. Set to `true` to apply (default) or `false` to skip this patch when loading a save.
-
-Replace `N` with sequential numbers starting from 1 for each mapping.
 
 ### Working with Hex Values
 
@@ -81,8 +130,8 @@ When using the `hex` type, the `HexValue` is static and cannot directly use the 
 #### Using Variables as Activation Switches
 
 For hex values, the variable acts as an on/off switch:
-- When variable = 0: The patch is OFF (original memory values remain).
-- When variable > 0: The patch is ON (hex value is applied).
+- When variable = 0: The patch is OFF (original memory values remain)
+- When variable > 0: The patch is ON (hex value is applied)
 
 Here's an example using the "HideEXP" quickpatch components:
 
@@ -110,8 +159,6 @@ QuickPatch3_Type=hex
 QuickPatch3_HexValue=EB21
 ```
 
-Then in your game, set Variable #5 to 0 to show EXP (deactivate patches), or any value greater than 0 to hide EXP (activate patches).
-
 #### Alternative: Using 8-bit or 32-bit Values for Dynamic Control
 
 If you need direct numeric control over memory values, use the 8-bit or 32-bit types instead of hex:
@@ -130,15 +177,13 @@ QuickPatch5_Address=0x490821
 QuickPatch5_Type=32bit
 ```
 
-For the 8-bit and 32-bit types, the actual value of the variable is used to modify memory.
-
 #### Converting Between Decimal and Hex
 
 Remember these conversions when working with hex values:
 
-- Decimal 235 = Hex 0xEB (Jump instruction used in HideEXP).
-- Decimal 144 = Hex 0x90 (NOP instruction).
-- Decimal 232 = Hex 0xE8 (CALL instruction).
+- Decimal 235 = Hex 0xEB (Jump instruction used in HideEXP)
+- Decimal 144 = Hex 0x90 (NOP instruction)
+- Decimal 232 = Hex 0xE8 (CALL instruction)
 
 In RPG Maker events, you might use a script like:
 ```
@@ -147,86 +192,111 @@ In RPG Maker events, you might use a script like:
 @>Variable [007:WindowX] = 144   // Sets window X coordinate to 144
 ```
 
-## Example Configuration
+### Configuration Parameters
 
+1. **EnableConsole**
+   - Controls debug console window
+   - Supported values:
+     - Enable: true, 1, yes, y, on
+     - Disable: false, 0, no, n, off (default)
+
+2. **MaxVariableId**
+   - Upper limit for variable IDs (default: 1000)
+   - Must be positive integer
+   - Values <= 0 use default of 1000
+
+3. **QuickPatch Entries**
+   - Maximum 100 entries (QuickPatch1 through QuickPatch100)
+   - Required fields:
+     - VariableId: 1 to MaxVariableId
+     - Address: Must use 0x prefix and 6 digits (e.g., 0x401234)
+     - Type: 8bit, 32bit, or hex
+   - Optional fields:
+     - HexValue: Required only for hex type
+     - OnLoadGame: Defaults to true if omitted
+
+### Configuration Examples
+
+1. **8-bit Value Mapping**
 ```ini
-[dynamic_quickpatch]
-; Enable debug message boxes
-ShowDebugMessages=true
-
-; Maximum variable ID (default: 1000)
-; Set this to match the maximum variable ID in your game's database
-MaxVariableId=2000
-
-; QuickPatch mapping #1 - Example of 8-bit value mapping
 QuickPatch1_VariableId=1
 QuickPatch1_Address=0x401234
 QuickPatch1_Type=8bit
 QuickPatch1_OnLoadGame=true
+```
 
-; QuickPatch mapping #2 - Example of 32-bit value mapping
-; This patch will NOT be applied when loading a save game
+2. **32-bit Value Mapping**
+```ini
 QuickPatch2_VariableId=2
 QuickPatch2_Address=0x40ABCD
 QuickPatch2_Type=32bit
 QuickPatch2_OnLoadGame=false
+```
 
-; QuickPatch mapping #3 - Example of raw hex value mapping
+3. **Hex Value Mapping**
+```ini
 QuickPatch3_VariableId=3
 QuickPatch3_Address=0x410000
 QuickPatch3_Type=hex
 QuickPatch3_HexValue=90ABCD
-; OnLoadGame defaults to true when omitted
 ```
 
-## Usage
+4. **Multiple Hex Patches (Same Variable)**
+```ini
+; Both controlled by Variable #5
+QuickPatch5_VariableId=5
+QuickPatch5_Address=0x49E148
+QuickPatch5_Type=hex
+QuickPatch5_HexValue=EB71
 
-1. Configure your memory mappings in `DynRPG.ini` as shown above.
-2. Set the `MaxVariableId` to match your game's database (default is 1000 if not specified).
-3. In your RPG Maker 2003 game, use the `Change Variable` command to set the value of the mapped variables.
-4. The plugin will automatically update the corresponding memory addresses.
-5. When loading a saved game, the plugin will automatically update memory addresses based on the current variable values, but only for patches that have `OnLoadGame=true` (or where this setting is omitted, as it defaults to true).
-6. When starting a new game, the plugin will automatically restore all memory locations to their original values.
+QuickPatch6_VariableId=5
+QuickPatch6_Address=0x49F1CA
+QuickPatch6_Type=hex
+QuickPatch6_HexValue=EB67
+```
 
 ## Finding Memory Addresses
 
 You can find memory addresses to modify in several ways:
 
-1. Look at existing quickpatches for inspiration.
-2. Use a memory editor like Cheat Engine to locate values you want to patch.
-3. Use a debugger like OllyDbg or x64dbg to step through the program and find where values are set or accessed.
-4. Look at a disassembly using tools like Ghidra or IDA to find functions and static addresses of interest.
+1. Look at existing quickpatches for inspiration
+2. Use a memory editor like Cheat Engine to locate values you want to patch
+3. Use a debugger like OllyDbg or x64dbg to step through the program and find where values are set or accessed
+4. Look at a disassembly using tools like Ghidra or IDA to find functions and static addresses of interest
 
 Once you've found a memory address:
-1. Add it to your configuration.
-2. Test with small changes to ensure you've found the correct address.
+1. Add it to your configuration
+2. Test with small changes to ensure you've found the correct address
 
 ## Example Applications
 
-- Dynamically changing window positions based on game events.
-- Creating adjustable graphic effects by modifying render parameters.
-- Implementing difficulty settings that affect game mechanics at the binary level.
-- Creating visual hacks that can be toggled on/off during gameplay.
-
-## Important Notes
-
-- Be careful when modifying memory addresses, as incorrect values can cause the game to crash.
-- Memory addresses are specific to each version of RPG Maker 2003 and may vary.
-- The plugin performs bounds checking for 8-bit values (-127 to 127) and automatically clamps values outside this range (values below -127 are clamped to -127, values above 127 are clamped to 127).
+- Dynamically changing window positions based on game events
+- Creating adjustable graphic effects by modifying render parameters
+- Implementing difficulty settings that affect game mechanics at the binary level
+- Creating visual hacks that can be toggled on/off during gameplay
 
 ## Troubleshooting
 
-If you encounter issues:
+1. **Patch Not Working**
+   - Verify address format (0x######)
+   - Check variable ID range
+   - Verify address validity
+   - Check value ranges
 
-- Check that the `dynamic_quickpatch.dll` file is located in the DynPlugins folder.
-- Verify your `DynRPG.ini` configuration for syntax errors.
-- Enable `ShowDebugMessages=true` to see detailed information about memory changes.
-- Ensure variable IDs are within the valid range (1-1000).
-- For hex type patches, ensure the hex string has an even number of characters.
+2. **Memory Errors**
+   - Verify address has exactly 6 digits
+   - Check for access violations
+   - Monitor debug output
+   - Verify patch type
+
+3. **Debug Output Issues**
+   - Verify EnableConsole=true
+   - Check console initialization
+   - Monitor error messages
+   - Check configuration loading
 
 ## Credits
 
 Special thanks to:
-
-- Cherry (David Trapp) for [DynRPG](https://rpg-maker.cherrytree.at/dynrpg/).
-- rewrking aka PepsiOtaku for [DynRPG](https://github.com/rewrking/DynRPG). 
+- Cherry (David Trapp) for [DynRPG](https://rpg-maker.cherrytree.at/dynrpg/)
+- rewrking aka PepsiOtaku for [DynRPG](https://github.com/rewrking/DynRPG)

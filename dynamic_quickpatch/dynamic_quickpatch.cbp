@@ -36,7 +36,8 @@
 			<Add directory="../../../../../../DynRPG/0.32/sdk/lib" />
 		</Linker>
 		<Unit filename="README.md" />
-		<Unit filename="dialog.cpp">
+		<Unit filename="DynRPG.ini" />
+		<Unit filename="dynamic_quickpatch_debug.cpp">
 			<Option compile="0" />
 			<Option link="0" />
 			<Option target="&lt;{~None~}&gt;" />

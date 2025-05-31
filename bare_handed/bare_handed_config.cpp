@@ -1,35 +1,56 @@
-/*
- * Configuration handling for the BareHanded plugin.
- * Loads settings from DynRPG.ini and provides access to them.
+/**
+ * @file bare_handed_config.cpp
+ * @brief Configuration handling for the BareHanded plugin.
+ * @details Loads and manages settings from DynRPG.ini, including actor-to-weapon mappings
+ *          and debug options.
  */
 
+/**
+ * @namespace BareHandedConfig
+ * @brief Contains configuration settings and loading functionality for the BareHanded plugin.
+ */
 namespace BareHandedConfig
 {
-    // Debug options
-    bool enableDebugConfig = false; // Debug messages during configuration loading
-    bool enableDebugRuntime = false; // Debug messages during gameplay
+    /** @brief Flag to enable configuration debug output. */
+    bool enableDebugConfig = false;
+
+    /** @brief Flag to enable runtime debug output. */
+    bool enableDebugRuntime = false;
     
-    // Map to store actor ID to unarmed weapon ID mapping
+    /**
+     * @brief Maps actor IDs to fixed bare hand weapon IDs.
+     * @details Positive values indicate weapon IDs to equip when the actor is unarmed.
+     */
     std::map<int, int> actorWeaponMap;
     
-    // Maps to store actor ID to variable ID mapping for variable-based weapon IDs
+    /**
+     * @brief Maps actor IDs to variable IDs containing weapon IDs.
+     * @details Variables contain weapon IDs to equip when the actor is unarmed.
+     *          Variable values must be positive to be considered valid.
+     */
     std::map<int, int> actorVariableMap;
     
     /**
-     * @brief Loads configuration from DynRPG.ini
-     * 
-     * @param pluginName Name of the plugin section in DynRPG.ini
-     * @return bool True if loaded successfully, false otherwise
+     * @brief Loads and validates configuration settings from DynRPG.ini.
+     * @param pluginName Name of the plugin section in DynRPG.ini.
+     * @return True if configuration loaded successfully, false otherwise.
+     * @details This function:
+     *          - Clears existing configuration
+     *          - Loads debug settings
+     *          - Loads actor-to-weapon mappings
+     *          - Validates weapon and variable IDs
+     * @note Both fixed weapon IDs and variable IDs must be positive values
+     *       to be considered valid configurations.
      */
     bool LoadConfig(char *pluginName) {
-        // Clear any existing configuration
+        // Reset configuration state
         actorWeaponMap.clear();
         actorVariableMap.clear();
         
-        // Load configuration from DynRPG.ini
+        // Load plugin configuration
         std::map<std::string, std::string> config = RPG::loadConfiguration(pluginName);
         
-        // Load debug settings
+        // Parse debug settings
         enableDebugConfig = false;
         enableDebugRuntime = false;
         
@@ -41,59 +62,57 @@ namespace BareHandedConfig
             enableDebugRuntime = (config["EnableDebugRuntime"] == "true" || config["EnableDebugRuntime"] == "1");
         }
         
-        // Load the maximum actor ID to check
+        // Parse maximum actor ID to check
         int maxActorId = 20; // Default value
         if (config.find("MaxActorId") != config.end()) {
             try {
                 maxActorId = std::stoi(config["MaxActorId"]);
             } catch (...) {
-                // Use default value if parsing fails
+                // Skip invalid actor ID configuration
             }
         }
         
-        if (enableDebugConfig) {
-            std::stringstream ss;
-            ss << "Loading configuration with MaxActorId=" << maxActorId;
-            Dialog::Show(ss.str(), "BareHanded - Configuration");
+        if (enableDebugConfig && Debug::enableConsole) {
+            std::cout << "[BareHanded - Configuration]" << std::endl;
+            std::cout << "Loading configuration with MaxActorId=" << maxActorId << std::endl;
+            std::cout << std::endl;
         }
         
-        // For each possible actor, check if they have a configuration
+        // Process actor configurations
         for (int actorId = 1; actorId <= maxActorId; ++actorId) {
             std::stringstream keyPrefix;
             keyPrefix << "Actor" << actorId;
             
-            // Get unarmed weapon ID for this actor
+            // Process fixed weapon ID configuration
             std::string weaponKey = keyPrefix.str() + "_UnarmedWeaponId";
             if (config.find(weaponKey) != config.end()) {
                 int weaponId = 0;
                 try {
                     weaponId = std::stoi(config[weaponKey]);
                 } catch (...) {
-                    // Use default value if parsing fails
+                    // Skip invalid weapon ID configuration
                 }
                 
-                // Only add positive weapon IDs to the map
+                // Store valid weapon IDs
                 if (weaponId > 0) {
                     actorWeaponMap[actorId] = weaponId;
                     
-                    if (enableDebugConfig) {
-                        std::stringstream ss;
-                        ss << "Configured Actor " << actorId << " with UnarmedWeaponId=" << weaponId;
-                        Dialog::Show(ss.str(), "BareHanded - Configuration");
+                    if (enableDebugConfig && Debug::enableConsole) {
+                        std::cout << "[BareHanded - Configuration]" << std::endl;
+                        std::cout << "Configured Actor " << actorId << " with UnarmedWeaponId=" << weaponId << std::endl;
+                        std::cout << std::endl;
                     }
                 }
-                else {
-                    // If a 0 or negative value was explicitly configured, log it
-                    if (enableDebugConfig) {
-                        std::stringstream ss;
-                        ss << "Conflict detected: Skipping Actor " << actorId << ": Invalid UnarmedWeaponId=" << weaponId 
-                           << " (must be > 0)";
-                        Dialog::Show(ss.str(), "BareHanded - Configuration Conflict");
-                    }
+                else if (enableDebugConfig && Debug::enableConsole) {
+                    // Log invalid weapon ID configuration
+                    std::cout << "[BareHanded - Configuration Conflict]" << std::endl;
+                    std::cout << "Conflict detected: Skipping Actor " << actorId << ": Invalid UnarmedWeaponId=" << weaponId 
+                             << " (must be > 0)" << std::endl;
+                    std::cout << std::endl;
                 }
             }
             
-            // Check for variable-based weapon ID
+            // Process variable-based weapon ID configuration
             std::string varKey = keyPrefix.str() + "_VariableId";
             bool hasVarKey = (config.find(varKey) != config.end());
             if (hasVarKey) {
@@ -101,30 +120,30 @@ namespace BareHandedConfig
                 try {
                     variableId = std::stoi(config[varKey]);
                 } catch (...) {
-                    // Use default value if parsing fails
+                    // Skip invalid variable ID configuration
                 }
                 
-                // Only add valid variable IDs to the map
+                // Store valid variable IDs
                 if (variableId > 0) {
                     actorVariableMap[actorId] = variableId;
                     
-                    if (enableDebugConfig) {
-                        std::stringstream ss;
-                        ss << "Configured Actor " << actorId << " with VariableId=" << variableId 
-                           << " (variable-based weapon ID)";
-                        Dialog::Show(ss.str(), "BareHanded - Configuration");
+                    if (enableDebugConfig && Debug::enableConsole) {
+                        std::cout << "[BareHanded - Configuration]" << std::endl;
+                        std::cout << "Configured Actor " << actorId << " with VariableId=" << variableId 
+                                 << " (variable-based weapon ID)" << std::endl;
+                        std::cout << std::endl;
                     }
                 }
-                else if (enableDebugConfig) {
-                    // Invalid variable ID
-                    std::stringstream ss;
-                    ss << "Conflict detected: Skipping Actor " << actorId << " variable-based weapon ID: "
-                       << "Invalid VariableId=" << variableId << " (must be > 0)";
-                    Dialog::Show(ss.str(), "BareHanded - Configuration Conflict");
+                else if (enableDebugConfig && Debug::enableConsole) {
+                    // Log invalid variable ID configuration
+                    std::cout << "[BareHanded - Configuration Conflict]" << std::endl;
+                    std::cout << "Conflict detected: Skipping Actor " << actorId << " variable-based weapon ID: "
+                             << "Invalid VariableId=" << variableId << " (must be > 0)" << std::endl;
+                    std::cout << std::endl;
                 }
             }
         }
         
         return true;
     }
-}
+} // namespace BareHandedConfig

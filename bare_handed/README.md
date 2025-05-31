@@ -1,19 +1,68 @@
-# Bare-Handed Plugin for RPG Maker 2003 (DynRPG)
+# BareHanded Plugin for RPG Maker 2003 (DynRPG)
 
 This DynRPG plugin allows actors without equipped weapons to automatically equip a configurable "unarmed" weapon in RPG Maker 2003, giving them proper stats for barehanded combat.
 
 ## Features
 
-- Fully configurable through DynRPG.ini.
-- Per-actor unarmed weapon IDs.
-- Variable-based unarmed weapon IDs.
-- Automatic equipping and unequipping of unarmed weapons based on game scene.
-- Debug message option for troubleshooting.
+- Configurable through DynRPG.ini
+- Per-actor unarmed weapon IDs
+- Variable-based unarmed weapon IDs
+- Automatic equipping and unequipping of unarmed weapons
+- Detailed debug output in console window
+- Comprehensive dual-wielding support
 
 ## Installation
 
-1. Place the `bare_handed.dll` file in your game's DynPlugins folder.
-2. Configure the plugin in your `DynRPG.ini` file (see below).
+1. Place `bare_handed.dll` in your game's DynPlugins folder
+2. Configure the plugin in `DynRPG.ini` (see Configuration section)
+
+## Technical Details
+
+### Value Ranges and Limitations
+- Actor IDs: Must match database IDs
+- Weapon IDs: Must be positive integers
+- Variable IDs: Must be positive integers
+- MaxActorId: Default is 20, can be increased as needed
+
+### MaxActorId Setting
+The `MaxActorId` setting determines the highest actor ID the plugin will check for configuration:
+- Default is 20 if not specified
+- Increase this value if your game uses actor IDs higher than 20
+- Example: `MaxActorId=30` if you have actors with IDs up to 30
+
+### Error Handling
+- Invalid weapon IDs are ignored during configuration
+- Invalid variable values prevent weapon equipping
+- Zero or negative values are treated as unconfigured
+- Dual-wielding conflicts are automatically handled
+
+### Debug Output Format
+When debug options are enabled, the console window shows:
+
+**Configuration Loading (EnableDebugConfig=true)**:
+```
+[BareHanded - Configuration]
+Loaded mapping:
+Actor ID: 1
+Weapon ID: 87
+
+[BareHanded - Configuration]
+Variable-based mapping:
+Actor ID: 4
+Variable ID: 10
+```
+
+**Runtime Actions (EnableDebugRuntime=true)**:
+```
+[BareHanded - Debug Info]
+Equipping bare hand weapon:
+Actor ID: 1
+Weapon ID: 87
+
+[BareHanded - Debug Info]
+Variable 10 contains invalid value: 0
+Actor 4 will remain unarmed
+```
 
 ## Configuration
 
@@ -21,228 +70,129 @@ Configure the plugin in `DynRPG.ini` using the following format:
 
 ```ini
 [bare_handed]
-; (OPTIONAL) Enables or disables debug message boxes for configuration
-; false = No debug messages for configuration (default)
-; true = Show detailed message boxes when loading settings from DynRPG.ini
-EnableDebugConfig=false
+; Debug Console Options
+EnableConsole=false      ; Enable/disable debug console window
+EnableDebugConfig=false  ; Show configuration loading details
+EnableDebugRuntime=false ; Show runtime action details
 
-; (OPTIONAL) Enables or disables debug message boxes for runtime operations
-; false = No debug messages during gameplay (default)
-; true = Show detailed message boxes when equipping/unequipping weapons
-EnableDebugRuntime=false
+; Maximum Actor ID Setting
+MaxActorId=20           ; Default is 20 if not specified
 
-; (OPTIONAL) Maximum actor ID to check for configuration
-; Default is 20 if not specified
-; Increase this value if your game uses actor IDs higher than 20
-MaxActorId=20
+; Direct Weapon Mapping
+Actor1_UnarmedWeaponId=87   ; Actor 1 equips weapon 87 when unarmed
+Actor2_UnarmedWeaponId=88   ; Actor 2 equips weapon 88 when unarmed
 
-; Actor-specific unarmed weapon configurations
-; Format: ActorX_UnarmedWeaponId=Y
-; Where X is the actor ID and Y is the weapon ID to equip when unarmed
-; Examples:
-; Actor1_UnarmedWeaponId=87  ; Actor 1 will equip weapon ID 87 when unarmed
-; Actor2_UnarmedWeaponId=88  ; Actor 2 will equip weapon ID 88 when unarmed
-
-; Variable-based weapon ID configurations
-; Format: ActorX_VariableId=Y
-; Where X is the actor ID and Y is the variable ID containing the weapon ID to equip
-; Examples:
-; Actor1_VariableId=10       ; Variable 10 contains the weapon ID to equip for Actor 1
-
-; Configure your actor settings below:
-Actor1_UnarmedWeaponId=87
-Actor2_UnarmedWeaponId=88
-Actor3_UnarmedWeaponId=89
-
-; Variable-based weapon ID example
-Actor4_VariableId=10  ; Variable 10 contains the weapon ID to equip for Actor 4
+; Variable-Based Mapping
+Actor4_VariableId=10        ; Use weapon ID from variable 10
 ```
 
 ### Debug Options
 
-- `EnableDebugConfig`: Whether to display debug message boxes during configuration loading (**OPTIONAL**).
-  - false = No debug messages (default).
-  - true = Show detailed message boxes when loading settings from DynRPG.ini.
-  - Useful for verifying that actor configurations are properly loaded.
+- `EnableConsole`: Controls the debug console window
+  - false = No console window (default)
+  - true = Show console window for debug output
+  - Required for any debug output to be visible
 
-- `EnableDebugRuntime`: Whether to display debug message boxes during gameplay (**OPTIONAL**).
-  - false = No debug messages (default).
-  - true = Show detailed message boxes when equipping/unequipping weapons.
-  - Useful for monitoring when weapons are automatically equipped or unequipped.
+- `EnableDebugConfig`: Shows configuration loading details
+  - false = No configuration debug output (default)
+  - true = Shows in console window:
+    - Loaded actor mappings
+    - Variable-based configurations
+    - Invalid configurations
+    - Configuration errors
 
-### Actor Configuration
+- `EnableDebugRuntime`: Shows runtime action details
+  - false = No runtime debug output (default)
+  - true = Shows in console window:
+    - Weapon equipping/unequipping
+    - Variable value issues
+    - Dual-wielding handling
+    - Event command processing
 
-The plugin requires one or more actor-to-weapon mappings to function. Each mapping follows this format:
+### Actor Weapon Mappings
 
+#### Direct Weapon Mapping
 ```ini
 [bare_handed]
-ActorX_UnarmedWeaponId=Y
+Actor1_UnarmedWeaponId=87   ; Actor 1 equips weapon 87 when unarmed
 ```
 
-Where:
-- `X` is the actor ID from your RPG Maker 2003 database.
-- `Y` is the weapon ID that should be equipped when this actor has no weapon.
+- Actor ID must exist in database
+- Weapon ID must be positive
+- Invalid mappings are ignored with debug message
 
-For example:
+#### Variable-Based Mapping
 ```ini
 [bare_handed]
-Actor1_UnarmedWeaponId=87
+Actor4_VariableId=10        ; Use weapon ID from variable 10
 ```
 
-This means that when actor 1 has no weapon equipped, the plugin will automatically equip weapon ID 87 during map scenes.
+- Variable ID must be positive
+- Variable value must be positive
+- Zero or negative values prevent equipping
+- Invalid values are logged if debug enabled
 
-**Important Notes**:
-- Only positive weapon IDs are valid. Zero or negative values will be ignored.
-- Actors without a specific configuration will not have an unarmed weapon equipped.
-- You must create the appropriate weapons in your database for this plugin to work.
+### Error Handling Examples
 
-### Variable-Based Weapon IDs
-
-For dynamic weapon configuration, you can use variable-based weapon IDs. The format is:
-
+1. **Invalid Weapon ID**:
 ```ini
-[bare_handed]
-ActorX_VariableId=Y
+Actor1_UnarmedWeaponId=0    ; Ignored: Weapon ID must be positive
+Actor2_UnarmedWeaponId=-1   ; Ignored: Weapon ID must be positive
 ```
 
-Where:
-- `X` is the actor ID from your RPG Maker 2003 database.
-- `Y` is the variable ID that contains the weapon ID to equip.
-
-For example:
+2. **Invalid Variable Value**:
 ```ini
-[bare_handed]
-Actor1_VariableId=10
+Actor4_VariableId=10        ; Variable contains 0
+; Result: Actor 4 remains unarmed
 ```
 
-This means:
-- The value in variable 10 will be used as the weapon ID to equip for actor 1 when unarmed.
-- When variable 10 contains a positive value, that value is used as the weapon ID.
-- When variable 10 contains 0 or a negative value, no weapon will be equipped (the actor is treated as unconfigured).
-
-**Important Note**: The variable ID must be a positive value for this feature to work. If the variable ID is invalid or the variable contains a non-positive value, the actor will be treated as if they have no unarmed weapon configuration.
-
-## How It Works
-
-1. When on the map screen, the plugin automatically equips the configured unarmed weapon for any actor who has no weapon equipped.
-   - For dual-wielding actors (with `Two Wpn.` flag set), the plugin checks both weapon slots (weapon and shield) and only equips a bare hand weapon if both slots are empty.
-   - The plugin will never equip a bare hand weapon in the secondary (shield) slot. It only checks this slot to determine if a bare hand weapon should be equipped in the primary slot.
-2. When entering the menu or shop screen, the plugin automatically unequips these unarmed weapons to allow normal equipment changes.
-
-## Dual-Wielding Support
-
-The plugin provides comprehensive support for dual-wielding characters (those with the `Two Wpn.` flag set in the database):
-
-### How It Works with Dual-Wielders
-
-- **Weapon Slot Behavior**:
-  - The plugin will only equip a bare hand weapon in the primary slot (weaponId).
-  - The secondary slot (shieldId) is never automatically filled by the plugin.
-  - A bare hand weapon will only be equipped if both weapon slots are empty.
-
-- **Unequipping Behavior**:
-  - The `@UnequipBareHand` command will remove any bare hand weapon from the actor.
-  - When a dual-wielding actor has a weapon in the secondary slot, they will not receive a bare hand weapon in the primary slot.
-
-### Example Scenarios
-
-1. **Actor with Two Empty Slots**:
-   - Primary Slot: Empty
-   - Secondary Slot: Empty
-   - Result: Bare hand weapon will be equipped in primary slot.
-
-2. **Actor with Secondary Weapon**:
-   - Primary Slot: Empty
-   - Secondary Slot: Dagger
-   - Result: No bare hand weapon will be equipped (respecting the secondary weapon).
-
-3. **After Using @UnequipBareHand**:
-   - The bare hand weapon will be removed from the actor.
-   - Debug messages will confirm the unequip action.
-
-## Examples
-
-### Basic Unarmed Weapon Configuration
-
+3. **Dual-Wielding Conflict**:
 ```ini
-[bare_handed]
-Actor1_UnarmedWeaponId=87
-Actor2_UnarmedWeaponId=88
-Actor3_UnarmedWeaponId=89
+; Actor 1 has Two Wpn. flag and secondary weapon:
+Actor1_UnarmedWeaponId=87   ; Not equipped: Secondary slot occupied
 ```
 
-Create weapons with IDs 87, 88, and 89 in your RPG Maker 2003 database. When actors 1, 2, or 3 have no weapon equipped on the map, they will automatically equip their respective unarmed weapons.
+### Debug Output Examples
 
-### Variable-Based Weapon IDs
+1. **Configuration Loading**:
+```
+[BareHanded - Configuration]
+Loaded mapping:
+Actor ID: 1
+Weapon ID: 87
 
-```ini
-[bare_handed]
-Actor1_UnarmedWeaponId=87
-Actor2_VariableId=10
+[BareHanded - Configuration]
+Skipped mapping:
+Actor ID: 2
+Reason: Invalid weapon ID (0)
 ```
 
-Create weapon ID 87 in your database.
-
-- Actor 1 will always equip weapon ID 87 when unarmed.
-- Actor 2's unarmed weapon will be determined by the value in variable 10.
-- If variable 10 contains 50, actor 2 will equip weapon ID 50 when unarmed.
-- If variable 10 contains 0 or a negative number, actor 2 won't equip any unarmed weapon.
-
-This allows for dynamic weapon configuration during gameplay.
-
-## Debugging
-
-For troubleshooting, enable the debug option:
-
-```ini
-[bare_handed]
-EnableDebugConfig=true  ; For debugging configuration loading
-EnableDebugRuntime=true ; For debugging weapon equipping/unequipping
+2. **Runtime Actions**:
 ```
+[BareHanded - Debug Info]
+Equipping bare hand weapon:
+Actor ID: 1
+Weapon ID: 87
 
-This will show message boxes when:
-1. The plugin is initialized.
-2. Unarmed weapons are equipped on the map.
-3. Unarmed weapons are unequipped in menus.
-4. Variable-controlled weapons are forcibly unequipped due to permission changes.
-
-The debug messages include detailed information about actor IDs, weapon IDs, and variable values.
-
-## Complete Example Configuration
-
-```ini
-[bare_handed]
-; Debug options
-EnableDebugConfig=false  ; For configuration loading
-EnableDebugRuntime=false ; For gameplay operations
-
-; Maximum actor ID to check
-MaxActorId=20
-
-; Actor-specific unarmed weapons
-Actor1_UnarmedWeaponId=87
-Actor2_UnarmedWeaponId=88
-Actor3_UnarmedWeaponId=89
-Actor4_UnarmedWeaponId=90
-
-; Variable-based weapon IDs
-Actor4_VariableId=10   ; Weapon ID from variable 10
-Actor5_VariableId=11   ; Weapon ID from variable 11
+[BareHanded - Debug Info]
+Dual-wielding detected:
+Actor ID: 1
+Secondary slot occupied
+Skipping bare hand equip
 ```
 
 ## Event Comment Commands
 
-This plugin provides two special event commands that can be used in comment event commands:
+The plugin provides two special event commands that can be used in comment event commands:
 
 ### 1. Unequip Bare Hand Weapon
-
 ```
 @UnequipBareHand actorId
 ```
 
 This command unequips a bare hand weapon from the specified actor, but only if the currently equipped weapon is a bare hand weapon (either from fixed configuration or variable-based configuration).
 
-- `actorId`: The ID of the actor to unequip. DynRPG automatically handles variable references when you use the `V` prefix (e.g., `V5` will use the value stored in variable 5).
+- `actorId`: The ID of the actor to unequip. DynRPG automatically handles variable references when you use the `V` prefix (e.g., `V5` will use the value stored in variable 5)
 
 This command will NOT unequip regular weapons, only bare hand weapons configured in the plugin. This ensures you don't accidentally remove weapons that the player has manually equipped.
 
@@ -255,7 +205,6 @@ This command will NOT unequip regular weapons, only bare hand weapons configured
 **Note:** When using the `V` prefix, DynRPG automatically retrieves the value from the variable, so the plugin already receives the final number value.
 
 ### 2. Update Bare Hand Equipment
-
 ```
 @UpdateBareHand
 ```
@@ -263,9 +212,9 @@ This command will NOT unequip regular weapons, only bare hand weapons configured
 This command forces the plugin to re-check all actors' equipment and apply bare hand weapons where appropriate. Use this after unequipping weapons via events to ensure bare hand weapons are properly equipped.
 
 **Usage scenarios:**
-- After using event commands to unequip a weapon.
-- After changing party members.
-- When you want to force bare hand weapons to be applied without waiting for a scene change.
+- After using event commands to unequip a weapon
+- After changing party members
+- When you want to force bare hand weapons to be applied without waiting for a scene change
 
 **Example:**
 ```
@@ -294,27 +243,31 @@ You MUST place a comment command before the Change Equipment event command:
 ```
 
 **Why this is necessary:**
-Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events.
-
-## Usage
-
-1. Configure your actor-to-weapon mappings in `DynRPG.ini` as shown above.
-2. Create the corresponding weapons in your RPG Maker 2003 database.
-3. The plugin will automatically manage equipping and unequipping of unarmed weapons during gameplay.
-4. Use the event comment commands (see below) for additional control over bare hand weapons in events.
+Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events. The sequence ensures that:
+1. Any bare hand weapon is properly removed before equipment changes
+2. The game's equipment command executes normally
+3. The plugin can reapply bare hand weapons if needed (when unequipping)
 
 ## Troubleshooting
 
-If you encounter issues:
+1. **Weapons Not Equipping**:
+   - Enable debug output to trace actions
+   - Verify weapon IDs are positive
+   - Check actor exists in database
+   - Confirm dual-wielding status
 
-- Check that the `bare_handed.dll` file is located in the DynPlugins folder.
-- Verify your `DynRPG.ini` configuration for syntax errors.
-- Enable `EnableDebugConfig=true` to see detailed information about configuration loading.
-- Enable `EnableDebugRuntime=true` to see detailed information about runtime operations.
+2. **Variable Weapons Not Working**:
+   - Verify variable contains valid ID
+   - Check variable ID is positive
+   - Enable debug to see variable values
+
+3. **Debug Output Not Showing**:
+   - Verify EnableConsole=true
+   - Check specific debug option enabled
+   - Confirm bare_handed.dll location
 
 ## Credits
 
 Special thanks to:
-
-- Cherry (David Trapp) for [DynRPG](https://rpg-maker.cherrytree.at/dynrpg/).
-- rewrking aka PepsiOtaku for [DynRPG](https://github.com/rewrking/DynRPG). 
+- Cherry (David Trapp) for [DynRPG](https://rpg-maker.cherrytree.at/dynrpg/)
+- rewrking aka PepsiOtaku for [DynRPG](https://github.com/rewrking/DynRPG/)

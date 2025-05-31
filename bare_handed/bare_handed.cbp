@@ -35,7 +35,9 @@
 			<Add library="../../../../../../DynRPG/0.32/sdk/lib/libDynRPG.a" />
 			<Add directory="../../../../../../DynRPG/0.32/sdk/lib" />
 		</Linker>
-		<Unit filename="dialog.cpp">
+		<Unit filename="README.md" />
+		<Unit filename="DynRPG.ini" />
+		<Unit filename="bare_handed_debug.cpp">
 			<Option compile="0" />
 			<Option link="0" />
 			<Option target="&lt;{~None~}&gt;" />

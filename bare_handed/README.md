@@ -242,11 +242,41 @@ You MUST place a comment command before the Change Equipment event command:
 [Change Equipment: Actor 1, Weapon, Steel Sword]  <- Then equip the new weapon
 ```
 
+**Important Note for Variable-Based Weapons:**
+When changing a variable that controls a bare hand weapon, you MUST manually unequip the current weapon and force an update:
+```
+@UnequipBareHand 14   <- First remove the current bare hand weapon
+[Control Variables: Set variable to new weapon ID]  <- Change the weapon ID
+@UpdateBareHand       <- Force equipment update with new weapon
+```
+
+This sequence is necessary because the plugin does not automatically update equipped variable-based weapons when their controlling variable changes.
+
 **Why this is necessary:**
 Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events. The sequence ensures that:
 1. Any bare hand weapon is properly removed before equipment changes
 2. The game's equipment command executes normally
 3. The plugin can reapply bare hand weapons if needed (when unequipping)
+
+## Combat System and Formulas
+
+### Default vs Plugin Combat
+
+RPG Maker 2003's default unarmed combat uses a simplified formula:
+```
+Damage = (ATK/2) - (DEF/4) × Variance(80%-120%)
+```
+
+Since bare-handed attacks are handled through equipped weapons, they use the standard weapon formula:
+```
+Damage = (ATK - DEF) × Attribute Multiplier × Variance
+```
+
+Benefits:
+- Full ATK value instead of halved
+- Weapon attributes and elements apply
+- Custom battle animations
+- Access to weapon-specific skills
 
 ## Troubleshooting
 

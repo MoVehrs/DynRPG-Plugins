@@ -32,6 +32,9 @@ namespace DirectSkills
     /** @brief Default skill ID being used as fallback. */
     int defaultSkillId = 0;
 
+    /** @brief Tracks the last logged command for each actor to prevent duplicate debug output. */
+    static std::map<int,int> lastLoggedCommandMap;
+
     /**
      * @brief Resolves the actual skill ID for a given battle command.
      * @param commandId The battle command ID to look up.
@@ -124,8 +127,11 @@ namespace DirectSkills
     /** @brief Tracks the last selected command index. */
     static int lastSelectedCommand = -1;
 
-    /** @brief Tracks the persistent command selection across frames. */
-    static int persistentSelectedCommand = -1;
+    /** @brief Stores the actual command ID of the selected command for each actor. */
+    static std::map<int, int> actorCommandMap;
+
+    /** @brief Tracks the last active actor to detect actor changes. */
+    static int lastActiveActorId = -1;
 
     /** @brief Tracks whether command selection has been initialized. */
     static bool selectionInitialized = false;
@@ -134,34 +140,83 @@ namespace DirectSkills
      * @brief Processes frame updates during battle.
      * @param scene The current game scene.
      * @details Tracks the selected command in the battle command window
-     *          and maintains persistent command selection state.
+     *          and stores the actual command ID when a valid selection is made.
+     *          Maintains separate command storage for each actor and prevents
+     *          duplicate debug output by tracking previously logged commands.
      * @note Only processes updates during battle scenes.
      */
     void onFrame(RPG::Scene scene) {
         // Only process updates during battle scenes
         if (scene != RPG::SCENE_BATTLE) return;
 
-        // Validate battle data and command window availability
-        if (RPG::battleData && RPG::battleData->winCommand) {
-            int currentSelection = RPG::battleData->winCommand->getSelected();
+        // Ensure battle data and the command window exist
+        if (!(RPG::battleData && RPG::battleData->winCommand)) return;
 
-            // Initialize command selection on first valid frame
-            if (!selectionInitialized && currentSelection >= 0) {
-                lastSelectedCommand = currentSelection;
-                persistentSelectedCommand = currentSelection;
-                selectionInitialized = true;
-                return;
-            }
+        // Grab the current battler (could be actor or monster)
+        RPG::Battler* battler = RPG::battleData->currentHero;
+        if (!battler) return;
 
-            // Update selection state on command change
-            if (currentSelection != lastSelectedCommand) {
-                lastSelectedCommand = currentSelection;
+        // If it's a monster, do nothing
+        if (battler->isMonster()) return;
 
-                // Persist valid selections only
-                if (currentSelection >= 0) {
-                    persistentSelectedCommand = currentSelection;
+        // Now we know it's an actor; cast so we can read battleCommands[]
+        RPG::Actor* currentActor = reinterpret_cast<RPG::Actor*>(battler);
+        if (!currentActor) return;
+
+        // If battleCommands pointer is still null, wait for next frame
+        if (!currentActor->battleCommands) return;
+
+        // Which "slot" in the command window is selected?
+        int currentSelection = RPG::battleData->winCommand->getSelected();
+        if (currentSelection < 0 || currentSelection >= 4) {
+            // No valid selection index (e.g. command window closed or out of range)
+            return;
+        }
+
+        // Fetch the actual command ID from battleCommands[]
+        int commandId = currentActor->battleCommands[currentSelection];
+        if (commandId <= 0) {
+            // Either still zero or invalid—means the engine hasn't populated it yet
+            return;
+        }
+
+        // At this point, we have a "real" commandId (> 0)
+        int actorId = currentActor->id;
+
+        // Always update the map so onDoBattlerAction() sees it
+        actorCommandMap[actorId] = commandId;
+
+        // Only log to console if this is a new command for this actor
+        int prevLogged = 0;
+        auto itLogged = lastLoggedCommandMap.find(actorId);
+        if (itLogged != lastLoggedCommandMap.end()) {
+            prevLogged = itLogged->second;
+        }
+
+        if (prevLogged != commandId) {
+            // Debug output (once per actual change)
+            if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
+                std::cout << "[DirectSkills - Debug Info]" << std::endl;
+                std::cout << "Command Selected in Frame:" << std::endl;
+                std::cout << "  Actor ID:      " << actorId << std::endl;
+                std::cout << "  Command Index: " << currentSelection << std::endl;
+                std::cout << "  Command ID:    " << commandId << std::endl;
+
+                // Optionally show the name
+                int commandIndex = commandId - 1;
+                if (RPG::battleSettings &&
+                    commandIndex >= 0 && commandIndex < 100 &&
+                    RPG::battleSettings->battleCommands[commandIndex] &&
+                    RPG::battleSettings->battleCommands[commandIndex]->name)
+                {
+                    std::string cmdName = RPG::battleSettings
+                                              ->battleCommands[commandIndex]
+                                              ->name.s_str();
+                    std::cout << "  Command Name:  " << cmdName << std::endl;
                 }
+                std::cout << std::endl;
             }
+            lastLoggedCommandMap[actorId] = commandId;
         }
     }
 
@@ -171,7 +226,9 @@ namespace DirectSkills
      * @param firstTry Whether this is the first attempt to process this action.
      * @return True to allow the action to proceed.
      * @details Checks if the current action should be replaced with a skill
-     *          based on the selected command and configuration.
+     *          based on the stored command selection and configuration.
+     *          Uses the stored command mapping instead of current selection
+     *          to prevent timing issues.
      * @note Only processes actor actions on their first attempt.
      * @see getSkillIdForCommand
      */
@@ -200,56 +257,42 @@ namespace DirectSkills
             return true;
         }
 
-        // Output debug information for battle commands
-        if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
-            std::cout << "[DirectSkills - Debug Info]" << std::endl;
-            std::cout << "Actor" << actor->id << "'s Battle Commands:" << std::endl;
+        // Check if we have a stored command selection for this actor
+        auto commandIt = actorCommandMap.find(actor->id);
+        if (commandIt != actorCommandMap.end()) {
+            int storedCommandId = commandIt->second;
 
-            if (actor->battleCommands) {
-                for (int i = 0; i < 4; i++) {
-                    std::cout << "  Index " << i << ": Command ID " << actor->battleCommands[i];
+            // Output debug information for current state
+            if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
+                std::cout << "[DirectSkills - Debug Info]" << std::endl;
+                std::cout << "Processing Action for Actor" << actor->id << std::endl;
+                std::cout << "Stored Command ID: " << storedCommandId << std::endl;
 
-                    // Display command name if available
-                    if (actor->battleCommands[i] > 0) {
-                        int commandIndex = actor->battleCommands[i] - 1;
-                        if (RPG::battleSettings && commandIndex >= 0 && commandIndex < 100 &&
-                            RPG::battleSettings->battleCommands[commandIndex] &&
-                            RPG::battleSettings->battleCommands[commandIndex]->name) {
-                            std::string cmdName = RPG::battleSettings->battleCommands[commandIndex]->name.s_str();
-                            std::cout << " (" << cmdName << ")";
-                        }
+                // Display current battleCommands state for debugging
+                std::cout << "Current battleCommands state:" << std::endl;
+                if (actor->battleCommands) {
+                    for (int i = 0; i < 4; i++) {
+                        std::cout << "  Index " << i << ": Command ID " << actor->battleCommands[i] << std::endl;
                     }
-
-                    // Indicate currently selected command
-                    if (i == persistentSelectedCommand) {
-                        std::cout << " <---";
-                    }
-
-                    std::cout << std::endl;
+                } else {
+                    std::cout << "  battleCommands is NULL!" << std::endl;
                 }
-            } else {
-                std::cout << "  battleCommands is NULL!" << std::endl;
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
-        }
 
-        // Validate command selection and battle commands
-        if (persistentSelectedCommand >= 0 && actor->battleCommands &&
-            persistentSelectedCommand < 4 && actor->battleCommands[persistentSelectedCommand] > 0) {
-
-            int selectedCommandId = actor->battleCommands[persistentSelectedCommand];
-
-            // Check if command is mapped to a skill
-            if (DirectSkillsConfig::commandToSkillMap.find(selectedCommandId) !=
+            // Check if the stored command is mapped to a skill
+            if (DirectSkillsConfig::commandToSkillMap.find(storedCommandId) !=
                 DirectSkillsConfig::commandToSkillMap.end()) {
 
-                int skillId = getSkillIdForCommand(selectedCommandId);
+                int skillId = getSkillIdForCommand(storedCommandId);
 
                 if (skillId > 0) {
+                    RPG::Skill* skill = RPG::skills[skillId];
+
                     // Output debug information for action replacement
                     if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
                         std::string cmdName = "Unknown";
-                        int commandIndex = selectedCommandId - 1;
+                        int commandIndex = storedCommandId - 1;
                         if (RPG::battleSettings && commandIndex >= 0 && commandIndex < 100 &&
                             RPG::battleSettings->battleCommands[commandIndex]) {
                             if (RPG::battleSettings->battleCommands[commandIndex]->name) {
@@ -259,8 +302,7 @@ namespace DirectSkills
 
                         std::cout << "[DirectSkills - Debug Info]" << std::endl;
                         std::cout << "Action Swapped for Actor" << actor->id << std::endl;
-                        std::cout << "Selected Command Index: " << persistentSelectedCommand << std::endl;
-                        std::cout << "Battle Command ID: " << selectedCommandId << " (" << cmdName << ")" << std::endl;
+                        std::cout << "Battle Command ID: " << storedCommandId << " (" << cmdName << ")" << std::endl;
 
                         if (usingDefaultSkill) {
                             std::cout << "Variable " << variableId << " contains invalid value: " << invalidVariableValue << std::endl;
@@ -274,6 +316,32 @@ namespace DirectSkills
                     // Replace basic attack with configured skill
                     action->kind = RPG::AK_SKILL;
                     action->skillId = skillId;
+
+
+                    // Convert skill target to action target
+                    switch (skill->target) {
+                        case RPG::SKILL_TARGET_ENEMY:
+                            action->target = RPG::TARGET_MONSTER;
+                            break;
+                        case RPG::SKILL_TARGET_ALL_ENEMIES:
+                            action->target = RPG::TARGET_ALL_MONSTERS;
+                            break;
+                        case RPG::SKILL_TARGET_SELF:
+                            action->target = RPG::TARGET_ACTOR;
+                            action->targetId = actor->id; // Target self
+                            break;
+                        case RPG::SKILL_TARGET_ALLY:
+                            action->target = RPG::TARGET_ACTOR;
+                            break;
+                        case RPG::SKILL_TARGET_ALL_ALLIES:
+                            action->target = RPG::TARGET_ALL_ACTORS;
+                            break;
+                        default:
+                            // Fallback to monster target if unknown
+                            action->target = RPG::TARGET_MONSTER;
+                            break;
+                    }
+
                     return true;
                 }
             } else {
@@ -281,21 +349,19 @@ namespace DirectSkills
                 if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
                     std::cout << "[DirectSkills - Debug Info]" << std::endl;
                     std::cout << "No Mapping Found for Actor" << actor->id << std::endl;
-                    std::cout << "Selected Command ID: " << selectedCommandId << std::endl;
+                    std::cout << "Stored Command ID: " << storedCommandId << std::endl;
                     std::cout << "This command is not in the skill mapping." << std::endl;
                     std::cout << std::endl;
                 }
             }
         } else {
-            // Output debug information for validation failure
+            // Output debug information for no stored command
             if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
                 std::cout << "[DirectSkills - Debug Info]" << std::endl;
-                std::cout << "Validation Failed for Actor" << actor->id << std::endl;
-                std::cout << "Selected Command Index: " << persistentSelectedCommand << std::endl;
-                std::cout << "battleCommands is NULL: " << (actor->battleCommands ? "No" : "Yes") << std::endl;
-                if (actor->battleCommands && persistentSelectedCommand >= 0 && persistentSelectedCommand < 4) {
-                    std::cout << "Command at index " << persistentSelectedCommand << ": "
-                             << actor->battleCommands[persistentSelectedCommand] << std::endl;
+                std::cout << "No Stored Command for Actor" << actor->id << std::endl;
+                std::cout << "Available stored commands:" << std::endl;
+                for (const auto& pair : actorCommandMap) {
+                    std::cout << "  Actor " << pair.first << ": Command ID " << pair.second << std::endl;
                 }
                 std::cout << std::endl;
             }
@@ -309,12 +375,25 @@ namespace DirectSkills
      * @param battler Pointer to the battler that completed the action.
      * @param success Whether the action was successful.
      * @return True to continue normal processing.
-     * @details Resets the persistent selected command to prevent command selection
-     *          from bleeding over between different actors' turns.
+     * @details Retains the stored command mapping for future turns,
+     *          allowing the same command selection to persist across
+     *          multiple battle actions until a new command is selected.
      */
     bool onBattlerActionDone(RPG::Battler* battler, bool success) {
-        // Reset command selection to prevent carry-over between actors
-        persistentSelectedCommand = -1;
+        // Only process actors, not monsters
+        if (!battler->isMonster()) {
+            RPG::Actor* actor = reinterpret_cast<RPG::Actor*>(battler);
+            if (actor) {
+                // Do nothing here – allow command mapping to persist across turns
+                // It will be updated when a new command is selected in onFrame()
+                if (DirectSkillsConfig::enableDebugBattle && Debug::enableConsole) {
+                    std::cout << "[DirectSkills - Debug Info]" << std::endl;
+                    std::cout << "Action completed for Actor " << actor->id << std::endl;
+                    std::cout << "Command mapping retained for now (not cleared)." << std::endl;
+                    std::cout << std::endl;
+                }
+            }
+        }
         return true;
     }
 } // namespace DirectSkills

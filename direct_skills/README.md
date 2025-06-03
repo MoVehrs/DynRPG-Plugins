@@ -15,8 +15,66 @@ This DynRPG plugin allows battle commands with attack archtype to automatically 
 
 1. Place `direct_skills.dll` in your game's DynPlugins folder
 2. Configure the plugin in `DynRPG.ini` (see Configuration section)
+3. Set up battle events for command detection (see Setup Requirements section)
+
+## Setup Requirements
+
+For the plugin to work correctly, you must set up battle events in every enemy troop:
+
+### Battle Event Setup
+Each enemy troop in the database needs a battle event with the following configuration:
+
+**Battle Event Page 1:**
+- Trigger: Turns Elapsed [0]
+- Call Common Event: CmdSetup (or your preferred name)
+
+### Common Event Setup
+Create a common event (e.g., "CmdSetup") with the following structure:
+
+```
+<>Branch if Actor1 in the Party
+  <>Change Battle Commands: Actor1 [CommandName] Add
+  <>
+: End
+<>Branch if Actor2 in the Party
+  <>Change Battle Commands: Actor2 [CommandName] Add
+  <>
+: End
+<>Branch if Actor3 in the Party
+  <>Change Battle Commands: Actor3 [CommandName] Add
+  <>
+: End
+<>Branch if Actor4 in the Party
+  <>Change Battle Commands: Actor4 [CommandName] Add
+  <>
+: End
+<>
+```
+
+**Important Notes:**
+- The example above shows actors 1-4, but you must include **every actor in your game**
+- Replace `[CommandName]` with the actual battle command names you want to use
+- You can add the same command again (it won't duplicate) - this forces an update to the battle commands
+- This setup is required for every enemy troop in your database
+- Without this setup, command detection will not work properly
+
+A workaround for this requirement is being developed for future versions.
 
 ## Technical Details
+
+### Skill Target Limitations
+
+**Currently Supported Targets:**
+- Single Enemy
+- All Enemies  
+- All Party Members
+
+**Limited Support:**
+- **Self Target**: Will cause issues with command execution
+- **Single Party Member**: Works but has targeting issues
+
+**Targeting Issues:**
+When using single party member or all party member target skills, the target selection still occurs in the enemy selection window because attack archetype battle commands use enemy selection. There is currently no workaround for this limitation, but a solution is being investigated.
 
 ### Value Ranges and Limitations
 - Battle command IDs: 1-100
@@ -209,6 +267,7 @@ This mapping will be skipped to avoid conflicts.
    - Verify command ID is between 1-100
    - Check command has Attack archtype
    - Enable debug output to see if mapping was loaded
+   - Ensure battle events are set up in all enemy troops
 
 2. **Variable Skill Not Working**:
    - Verify variable contains valid skill ID
@@ -219,6 +278,11 @@ This mapping will be skipped to avoid conflicts.
    - Verify EnableConsole=true
    - Check specific debug option is enabled
    - Confirm direct_skills.dll is in DynPlugins folder
+
+4. **Targeting Issues**:
+   - Avoid using Self target skills (causes execution issues)
+   - Be aware that single/all party member skills still use enemy selection window
+   - Stick to enemy-targeting skills for best compatibility
 
 ## Credits
 

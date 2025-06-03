@@ -1,7 +1,7 @@
 #define PLUGIN_NAME "DirectSkills"
 #define PLUGIN_INTERNAL_NAME "direct_skills.dll"
-#define PLUGIN_VERSION      1,0,1,0
-#define PLUGIN_VERSION_TXT "1.0.1.0"
+#define PLUGIN_VERSION      1,0,1,1
+#define PLUGIN_VERSION_TXT "1.0.1.1"
 #define PLUGIN_COPYRIGHT "(C) 2025 Hammy"
 #define PLUGIN_COMMENTS "Direct Skills system for RPG Maker 2003"
 

@@ -325,34 +325,18 @@ namespace DynamicQuickPatch
      * @param mapping The mapping definition to update.
      * @param value The new value to apply.
      * @details Applies the new value to memory according to the mapping type:
-     *          - For 8-bit: Clamps value to valid range
-     *          - For 32-bit: Direct value write
-     *          - For hex: Uses predefined hex string
-     * @note If value is 0, restores original memory values.
+     *          - For 8-bit: Allows 0 as valid value, clamps to valid range
+     *          - For 32-bit: Allows 0 as valid value, direct value write
+     *          - For hex: Uses predefined hex string, 0 deactivates patch
+     * @note For hex patches, if value is 0, restores original memory values.
+     *       For 8-bit and 32-bit patches, 0 is treated as a valid value to write.
      */
     void updateQuickPatch(const DynamicQuickPatchConfig::QuickPatchMapping& mapping, int value) {
-        // Handle patch deactivation
-        if (value == 0) {
-            // Determine patch size based on type
-            size_t size = 0;
-            std::string typeStr;
-
-            switch (mapping.type) {
-                case DynamicQuickPatchConfig::QPTYPE_8BIT:
-                    size = 1;
-                    typeStr = "8-bit (%)";
-                    break;
-
-                case DynamicQuickPatchConfig::QPTYPE_32BIT:
-                    size = sizeof(int);
-                    typeStr = "32-bit (#)";
-                    break;
-
-                case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
-                    size = mapping.hexValue.length() / 2;
-                    typeStr = "Raw Hex";
-                    break;
-            }
+        // Handle patch deactivation - only for hex patches
+        if (value == 0 && mapping.type == DynamicQuickPatchConfig::QPTYPE_HEX_RAW) {
+            // Determine patch size for hex type
+            size_t size = mapping.hexValue.length() / 2;
+            std::string typeStr = "Raw Hex";
 
             // Restore original memory values if available
             bool restored = false;
@@ -405,24 +389,28 @@ namespace DynamicQuickPatch
             }
         }
 
-        // Validate and adjust value if needed
-        validateValue(value, mapping.type, mapping.variableId, mapping.address);
+        // Validate and adjust value if needed (for non-hex types)
+        if (mapping.type != DynamicQuickPatchConfig::QPTYPE_HEX_RAW) {
+            validateValue(value, mapping.type, mapping.variableId, mapping.address);
+        }
         int adjustedValue = value;
 
         // Apply new value with range clamping
         switch (mapping.type) {
             case DynamicQuickPatchConfig::QPTYPE_8BIT:
-                // Clamp value to 8-bit range
+                // Clamp value to 8-bit range (0 is valid)
                 if (adjustedValue < DQP_INT8_MIN) adjustedValue = DQP_INT8_MIN;
                 if (adjustedValue > DQP_INT8_MAX) adjustedValue = DQP_INT8_MAX;
                 write8bitValue(mapping.address, adjustedValue);
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_32BIT:
+                // Direct write (0 is valid)
                 write32bitValue(mapping.address, adjustedValue);
                 break;
 
             case DynamicQuickPatchConfig::QPTYPE_HEX_RAW:
+                // For hex patches, write the predefined hex value
                 writeHexValue(mapping.address, mapping.hexValue);
                 break;
         }
@@ -640,20 +628,29 @@ namespace DynamicQuickPatch
      * @param id ID of the variable being changed.
      * @param value New value of the variable.
      * @return Always returns true to continue normal processing.
-     * @details Checks if the changed variable has a quickpatch mapping and
-     *          updates memory if needed.
+     * @details Checks if the changed variable has quickpatch mappings and
+     *          updates ALL memory locations mapped to this variable.
+     *          Multiple patches can share the same variable ID.
      */
     bool onSetVariable(int id, int value) {
-        // Find mapping for this variable ID
+        // Find ALL mappings for this variable ID
         const auto& mappings = DynamicQuickPatchConfig::getMappings();
-        auto it = std::find_if(mappings.begin(), mappings.end(),
-            [id](const DynamicQuickPatchConfig::QuickPatchMapping& mapping) {
-                return mapping.variableId == id;
-            });
+        int updatedCount = 0;
 
-        // Update patch if mapping exists
-        if (it != mappings.end()) {
-            updateQuickPatch(*it, value);
+        // Iterate through all mappings to find matches
+        for (const auto& mapping : mappings) {
+            if (mapping.variableId == id) {
+                updateQuickPatch(mapping, value);
+                updatedCount++;
+            }
+        }
+
+        // Optional: Log if multiple patches were updated
+        if (Debug::enableConsole && updatedCount > 1) {
+            std::cout << "[DynamicQuickPatch - Multi-Patch Update]" << std::endl;
+            std::cout << "Updated " << updatedCount << " patches for variable " << id << std::endl;
+            std::cout << "New value: " << value << std::endl;
+            std::cout << std::endl;
         }
 
         return true;

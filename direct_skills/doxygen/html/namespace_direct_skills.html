@@ -26,7 +26,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">DirectSkills<span id="projectnumber">&#160;1.0.1.0</span>
+   <div id="projectname">DirectSkills<span id="projectnumber">&#160;1.0.1.1</span>
    </div>
    <div id="projectbrief">DynRPG plugin for direct skill execution from battle commands in RPG Maker 2003. Allows battle commands to automatically execute designated skills instead of regular attacks. Features fixed and variable-based skill mappings with fallback options and built-in limit_break plugin compatibility.Allows battle commands to automatically execute designated skills instead of regular attacks. Features fixed and variable-based skill mappings with fallback options and built-in limit_break plugin compatibility.</div>
   </td>
@@ -195,7 +195,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultSkillId</b> = 0
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True to continue normal processing.</dd></dl>
-<p>Resets the persistent selected command to prevent command selection from bleeding over between different actors' turns. </p>
+<p>Retains the stored command mapping for future turns, allowing the same command selection to persist across multiple battle actions until a new command is selected. </p>
 
 </div>
 </div>
@@ -227,7 +227,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultSkillId</b> = 0
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True to allow the action to proceed.</dd></dl>
-<p>Checks if the current action should be replaced with a skill based on the selected command and configuration. </p><dl class="section note"><dt>Note</dt><dd>Only processes actor actions on their first attempt. </dd></dl>
+<p>Checks if the current action should be replaced with a skill based on the stored command selection and configuration. Uses the stored command mapping instead of current selection to prevent timing issues. </p><dl class="section note"><dt>Note</dt><dd>Only processes actor actions on their first attempt. </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="#a6d1678c707f2bb81a55856b830f92d5b" title="Resolves the actual skill ID for a given battle command.">getSkillIdForCommand</a> </dd></dl>
 
 </div>
@@ -274,7 +274,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultSkillId</b> = 0
   </table>
   </dd>
 </dl>
-<p>Tracks the selected command in the battle command window and maintains persistent command selection state. </p><dl class="section note"><dt>Note</dt><dd>Only processes updates during battle scenes. </dd></dl>
+<p>Tracks the selected command in the battle command window and stores the actual command ID when a valid selection is made. Maintains separate command storage for each actor and prevents duplicate debug output by tracking previously logged commands. </p><dl class="section note"><dt>Note</dt><dd>Only processes updates during battle scenes. </dd></dl>
 
 </div>
 </div>

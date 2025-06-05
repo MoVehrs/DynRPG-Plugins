@@ -26,7 +26,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">DirectSkills<span id="projectnumber">&#160;1.0.1.0</span>
+   <div id="projectname">DirectSkills<span id="projectnumber">&#160;1.0.1.1</span>
    </div>
    <div id="projectbrief">DynRPG plugin for direct skill execution from battle commands in RPG Maker 2003. Allows battle commands to automatically execute designated skills instead of regular attacks. Features fixed and variable-based skill mappings with fallback options and built-in limit_break plugin compatibility.Allows battle commands to automatically execute designated skills instead of regular attacks. Features fixed and variable-based skill mappings with fallback options and built-in limit_break plugin compatibility.</div>
   </td>
@@ -109,10 +109,62 @@ Installation</h1>
 <ol type="1">
 <li>Place <span class="tt">direct_skills.dll</span> in your game's DynPlugins folder</li>
 <li>Configure the plugin in <span class="tt">DynRPG.ini</span> (see Configuration section)</li>
+<li>Set up battle events for command detection (see Setup Requirements section)</li>
 </ol>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
-Technical Details</h1>
+Setup Requirements</h1>
+<p>For the plugin to work correctly, you must set up battle events in every enemy troop:</p>
 <h2 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
+Battle Event Setup</h2>
+<p>Each enemy troop in the database needs a battle event with the following configuration:</p>
+<p><b>Battle Event Page 1:</b></p><ul>
+<li>Trigger: Turns Elapsed [0]</li>
+<li>Call Common Event: CmdSetup (or your preferred name)</li>
+</ul>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
+Common Event Setup</h2>
+<p>Create a common event (e.g., "CmdSetup") with the following structure:</p>
+<div class="fragment"><div class="line">&lt;&gt;Branch if Actor1 in the Party</div>
+<div class="line">  &lt;&gt;Change Battle Commands: Actor1 [CommandName] Add</div>
+<div class="line">  &lt;&gt;</div>
+<div class="line">: End</div>
+<div class="line">&lt;&gt;Branch if Actor2 in the Party</div>
+<div class="line">  &lt;&gt;Change Battle Commands: Actor2 [CommandName] Add</div>
+<div class="line">  &lt;&gt;</div>
+<div class="line">: End</div>
+<div class="line">&lt;&gt;Branch if Actor3 in the Party</div>
+<div class="line">  &lt;&gt;Change Battle Commands: Actor3 [CommandName] Add</div>
+<div class="line">  &lt;&gt;</div>
+<div class="line">: End</div>
+<div class="line">&lt;&gt;Branch if Actor4 in the Party</div>
+<div class="line">  &lt;&gt;Change Battle Commands: Actor4 [CommandName] Add</div>
+<div class="line">  &lt;&gt;</div>
+<div class="line">: End</div>
+<div class="line">&lt;&gt;</div>
+</div><!-- fragment --><p><b>Important Notes:</b></p><ul>
+<li>The example above shows actors 1-4, but you must include <b>every actor in your game</b></li>
+<li>Replace <span class="tt">[CommandName]</span> with the actual battle command names you want to use</li>
+<li>You can add the same command again (it won't duplicate) - this forces an update to the battle commands</li>
+<li>This setup is required for every enemy troop in your database</li>
+<li>Without this setup, command detection will not work properly</li>
+</ul>
+<p>A workaround for this requirement is being developed for future versions.</p>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md6"></a>
+Technical Details</h1>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md7"></a>
+Skill Target Limitations</h2>
+<p><b>Currently Supported Targets:</b></p><ul>
+<li>Single Enemy</li>
+<li>All Enemies <br  />
+</li>
+<li>All Party Members</li>
+</ul>
+<p><b>Limited Support:</b></p><ul>
+<li><b>Self Target</b>: Will cause issues with command execution</li>
+<li><b>Single Party Member</b>: Works but has targeting issues</li>
+</ul>
+<p><b>Targeting Issues:</b> When using single party member or all party member target skills, the target selection still occurs in the enemy selection window because attack archetype battle commands use enemy selection. There is currently no workaround for this limitation, but a solution is being investigated.</p>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md8"></a>
 Value Ranges and Limitations</h2>
 <ul>
 <li>Battle command IDs: 1-100</li>
@@ -121,15 +173,16 @@ Value Ranges and Limitations</h2>
 <li>Variable IDs: Must be positive integers</li>
 <li>Default skill IDs: Must be positive integers</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
 Important Requirements</h2>
 <ul>
 <li>Battle commands must be set to Attack archtype in the database</li>
 <li>Command IDs must correspond to existing battle commands</li>
 <li>Skills must exist in the database and be usable by the actors</li>
 <li>Invalid configurations will be skipped with debug messages</li>
+<li>Direct skills must not use MP, as this can cause unexpected behavior when MP is insufficient</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md6"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
 Error Handling</h2>
 <ul>
 <li>Invalid command IDs are skipped during configuration</li>
@@ -138,7 +191,7 @@ Error Handling</h2>
 <li>Missing default skills prevent variable mappings from loading</li>
 <li>Conflicts with limit_break plugin are automatically detected and skipped</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md7"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
 Debug Output Format</h2>
 <p>When debug options are enabled, the console window shows:</p>
 <p><b>Configuration Loading (EnableDebugConfig=true)</b>: </p><div class="fragment"><div class="line">[DirectSkills - Configuration]</div>
@@ -158,7 +211,7 @@ Debug Output Format</h2>
 <div class="line">[DirectSkills - Debug Info]</div>
 <div class="line">Variable 45 contains invalid value: 0</div>
 <div class="line">Using default skill ID: 150</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md8"></a>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
 Configuration</h1>
 <p>Configure the plugin in <span class="tt">DynRPG.ini</span> using the following format:</p>
 <div class="fragment"><div class="line">[direct_skills]</div>
@@ -173,7 +226,7 @@ Configuration</h1>
 <div class="line">; Variable-Based Mapping</div>
 <div class="line">BattleCommandId15=v45                ; Use skill ID from variable 45</div>
 <div class="line">BattleCommandId15_DefaultId=150      ; Fallback if variable 45 is invalid</div>
-</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md13"></a>
 Debug Options</h2>
 <ul>
 <li><span class="tt">EnableConsole</span>: Controls the debug console window<ul>
@@ -205,9 +258,9 @@ Debug Options</h2>
 </ul>
 </li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md14"></a>
 Battle Command Mappings</h2>
-<h3 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
+<h3 class="doxsection"><a class="anchor" id="autotoc_md15"></a>
 Direct Skill Mapping</h3>
 <div class="fragment"><div class="line">[direct_skills]</div>
 <div class="line">BattleCommandId14=123   ; Command 14 executes skill 123</div>
@@ -216,7 +269,7 @@ Direct Skill Mapping</h3>
 <li>Skill ID must be a positive integer</li>
 <li>Invalid mappings are skipped with debug message</li>
 </ul>
-<h3 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
+<h3 class="doxsection"><a class="anchor" id="autotoc_md16"></a>
 Variable-Based Mapping</h3>
 <div class="fragment"><div class="line">[direct_skills]</div>
 <div class="line">BattleCommandId15=v45                ; Use skill ID from variable 45</div>
@@ -227,7 +280,7 @@ Variable-Based Mapping</h3>
 <li>Default skill is required for variable mappings</li>
 <li>Invalid variable values trigger default skill usage</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md13"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md17"></a>
 Error Handling Examples</h2>
 <ol type="1">
 <li><b>Invalid Command ID</b>: <div class="fragment"><div class="line">BattleCommandId0=123    ; Skipped: Command ID &lt; 1</div>
@@ -242,7 +295,7 @@ Error Handling Examples</h2>
 <div class="line">BattleCommandId20=123   ; Skipped: Conflicts with limit_break</div>
 </div><!-- fragment --></li>
 </ol>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md14"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md18"></a>
 Debug Output Examples</h2>
 <ol type="1">
 <li><b>Configuration Loading</b>: <div class="fragment"><div class="line">[DirectSkills - Configuration]</div>
@@ -266,7 +319,7 @@ Debug Output Examples</h2>
 <div class="line">Using default skill ID: 150</div>
 </div><!-- fragment --></li>
 </ol>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md15"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md19"></a>
 Compatibility with limit_break Plugin</h1>
 <p>The plugin automatically handles conflicts with the limit_break plugin:</p>
 <ol type="1">
@@ -282,13 +335,14 @@ Compatibility with limit_break Plugin</h1>
 <p>Example conflict detection: </p><div class="fragment"><div class="line">[DirectSkills - Conflict Detection]</div>
 <div class="line">Conflict detected: BattleCommandId15 is also used as LimitCommandId</div>
 <div class="line">This mapping will be skipped to avoid conflicts.</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md16"></a>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md20"></a>
 Troubleshooting</h1>
 <ol type="1">
 <li><b>Command Not Working</b>:<ul>
 <li>Verify command ID is between 1-100</li>
 <li>Check command has Attack archtype</li>
 <li>Enable debug output to see if mapping was loaded</li>
+<li>Ensure battle events are set up in all enemy troops</li>
 </ul>
 </li>
 <li><b>Variable Skill Not Working</b>:<ul>
@@ -303,8 +357,14 @@ Troubleshooting</h1>
 <li>Confirm direct_skills.dll is in DynPlugins folder</li>
 </ul>
 </li>
+<li><b>Targeting Issues</b>:<ul>
+<li>Avoid using Self target skills (causes execution issues)</li>
+<li>Be aware that single/all party member skills still use enemy selection window</li>
+<li>Stick to enemy-targeting skills for best compatibility</li>
+</ul>
+</li>
 </ol>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md17"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md21"></a>
 Credits</h1>
 <p>Special thanks to:</p><ul>
 <li>Cherry (David Trapp) for <a href="https://rpg-maker.cherrytree.at/dynrpg/">DynRPG</a></li>

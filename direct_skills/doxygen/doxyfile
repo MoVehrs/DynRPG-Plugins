@@ -48,7 +48,7 @@ PROJECT_NAME           = DirectSkills
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.0.1.0
+PROJECT_NUMBER         = 1.0.1.1
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewers a
@@ -981,7 +981,7 @@ WARN_LOGFILE           = "C:\Users\Buddy\Desktop\DynRPG Test\DynPlugins\direct_s
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ..\direct_skills_config.cpp \
+INPUT                  = ../ \
                          ..\direct_skills.cpp \
                          ..\direct_skills_debug.cpp \
                          ..\main.cpp \

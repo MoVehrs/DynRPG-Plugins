@@ -26,7 +26,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">DynamicQuickPatch<span id="projectnumber">&#160;1.0.1.0</span>
+   <div id="projectname">DynamicQuickPatch<span id="projectnumber">&#160;1.0.1.1</span>
    </div>
    <div id="projectbrief">DynRPG plugin for dynamic battle parameter modification in RPG Maker 2003. Provides real-time modification of battle parameters through variables and switches. Enables dynamic adjustments to hit rates, critical rates, damage variance, and other combat calculations without database edits.</div>
   </td>
@@ -309,7 +309,7 @@ const int&#160;</td><td class="memItemRight" valign="bottom"><b>DQP_INT32_MAX</b
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Always returns true to continue normal processing.</dd></dl>
-<p>Checks if the changed variable has a quickpatch mapping and updates memory if needed. </p>
+<p>Checks if the changed variable has quickpatch mappings and updates ALL memory locations mapped to this variable. Multiple patches can share the same variable ID. </p>
 
 </div>
 </div>
@@ -426,9 +426,9 @@ const int&#160;</td><td class="memItemRight" valign="bottom"><b>DQP_INT32_MAX</b
   </dd>
 </dl>
 <p>Applies the new value to memory according to the mapping type:</p><ul>
-<li>For 8-bit: Clamps value to valid range</li>
-<li>For 32-bit: Direct value write</li>
-<li>For hex: Uses predefined hex string <dl class="section note"><dt>Note</dt><dd>If value is 0, restores original memory values. </dd></dl>
+<li>For 8-bit: Allows 0 as valid value, clamps to valid range</li>
+<li>For 32-bit: Allows 0 as valid value, direct value write</li>
+<li>For hex: Uses predefined hex string, 0 deactivates patch <dl class="section note"><dt>Note</dt><dd>For hex patches, if value is 0, restores original memory values. For 8-bit and 32-bit patches, 0 is treated as a valid value to write. </dd></dl>
 </li>
 </ul>
 

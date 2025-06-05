@@ -299,12 +299,28 @@ Important: Using the Change Equipment Event Command</h2>
 <p>You MUST place a comment command before the Change Equipment event command:</p>
 <div class="fragment"><div class="line">@UnequipBareHand 1    &lt;- First remove the bare hand weapon</div>
 <div class="line">[Change Equipment: Actor 1, Weapon, Steel Sword]  &lt;- Then equip the new weapon</div>
-</div><!-- fragment --><p><b>Why this is necessary:</b> Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events. The sequence ensures that:</p><ol type="1">
+</div><!-- fragment --><p><b>Important Note for Variable-Based Weapons:</b> When changing a variable that controls a bare hand weapon, you MUST manually unequip the current weapon and force an update: </p><div class="fragment"><div class="line">@UnequipBareHand 14   &lt;- First remove the current bare hand weapon</div>
+<div class="line">[Control Variables: Set variable to new weapon ID]  &lt;- Change the weapon ID</div>
+<div class="line">@UpdateBareHand       &lt;- Force equipment update with new weapon</div>
+</div><!-- fragment --><p>This sequence is necessary because the plugin does not automatically update equipped variable-based weapons when their controlling variable changes.</p>
+<p><b>Why this is necessary:</b> Without these comment commands, the hidden bare hand weapons (which should not be accessible to players) may appear in the player's inventory when equipping/unequipping through events. The sequence ensures that:</p><ol type="1">
 <li>Any bare hand weapon is properly removed before equipment changes</li>
 <li>The game's equipment command executes normally</li>
 <li>The plugin can reapply bare hand weapons if needed (when unequipping)</li>
 </ol>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md19"></a>
+Combat System and Formulas</h1>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md20"></a>
+Default vs Plugin Combat</h2>
+<p>RPG Maker 2003's default unarmed combat uses a simplified formula: </p><div class="fragment"><div class="line">Damage = (ATK/2) - (DEF/4) × Variance(80%-120%)</div>
+</div><!-- fragment --><p>Since bare-handed attacks are handled through equipped weapons, they use the standard weapon formula: </p><div class="fragment"><div class="line">Damage = (ATK - DEF) × Attribute Multiplier × Variance</div>
+</div><!-- fragment --><p>Benefits:</p><ul>
+<li>Full ATK value instead of halved</li>
+<li>Weapon attributes and elements apply</li>
+<li>Custom battle animations</li>
+<li>Access to weapon-specific skills</li>
+</ul>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md21"></a>
 Troubleshooting</h1>
 <ol type="1">
 <li><b>Weapons Not Equipping</b>:<ul>
@@ -327,7 +343,7 @@ Troubleshooting</h1>
 </ul>
 </li>
 </ol>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md20"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md22"></a>
 Credits</h1>
 <p>Special thanks to:</p><ul>
 <li>Cherry (David Trapp) for <a href="https://rpg-maker.cherrytree.at/dynrpg/">DynRPG</a></li>

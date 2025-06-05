@@ -88,6 +88,7 @@ When using single party member or all party member target skills, the target sel
 - Command IDs must correspond to existing battle commands
 - Skills must exist in the database and be usable by the actors
 - Invalid configurations will be skipped with debug messages
+- Direct skills must not use MP, as this can cause unexpected behavior when MP is insufficient
 
 ### Error Handling
 - Invalid command IDs are skipped during configuration

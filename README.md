@@ -16,7 +16,7 @@ This repository is meant to:
 
 - **[bare_handed](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/bare_handed)** `1.0.1.0`
 - **[direct_skills](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/direct_skills)** `1.0.1.1`
-- **[dynamic_quickpatch](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/dynamic_quickpatch)** `1.0.1.0`
+- **[dynamic_quickpatch](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/dynamic_quickpatch)** `1.0.1.1`
 - **[limit_break](https://github.com/MoVehrs/DynRPG-Plugins/tree/main/limit_break)** `1.0.0.0`
 
 ## 🛠 Requirements
